@@ -1,0 +1,856 @@
+import sqlite3
+import json
+import os
+from datetime import datetime
+from typing import Dict, Any, List
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(ROOT_DIR, "data", "app.sqlite")
+OUTPUT_HTML_PATH = os.path.join(ROOT_DIR, "offline_viewer.html")
+
+def get_offline_data() -> Dict[str, Any]:
+    if not os.path.exists(DB_PATH):
+        return {"summaries": [], "channels": [], "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # 1. Fetch all channels
+    cursor.execute("SELECT * FROM channels ORDER BY is_default DESC, id ASC")
+    channels = [dict(r) for r in cursor.fetchall()]
+    
+    # 2. Fetch all summaries with video info
+    cursor.execute("""
+    SELECT s.*, 
+           v.published_date, v.published_time_text, v.duration_text, v.view_count_text, 
+           v.thumbnail_url, v.video_url, v.is_within_24h, v.is_custom_added, v.channel_id,
+           COALESCE(c.name, v.channel_name, 'ConstructIQ') as channel_name,
+           COALESCE(c.handle, '@ConstructIQ') as channel_handle
+    FROM summaries s
+    JOIN videos v ON s.video_id = v.video_id
+    LEFT JOIN channels c ON v.channel_id = c.id
+    ORDER BY s.created_at DESC
+    """)
+    summaries = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    
+    return {
+        "summaries": summaries,
+        "channels": channels,
+        "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+def export_offline_viewer(output_path: str = OUTPUT_HTML_PATH) -> str:
+    """
+    Generates a 100% standalone, self-contained single-file HTML viewer.
+    Requires NO backend, NO python, and NO server. Simply double-click to open in any browser.
+    """
+    data = get_offline_data()
+    
+    # Safely escape </script> inside JSON to avoid breaking HTML parser
+    json_str = json.dumps(data, ensure_ascii=False).replace("</script>", "<\\/script>")
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youtube AI Digest | 오프라인 아카이브 뷰어</title>
+  
+  <!-- Tailwind CSS CDN with Fallback -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {{
+      darkMode: 'class',
+      theme: {{
+        extend: {{
+          colors: {{
+            brand: {{
+              50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
+            }}
+          }}
+        }}
+      }}
+    }}
+  </script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Marked.js (Markdown parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Embedded Fallback Styles -->
+  <style>
+    body {{
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }}
+    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
+    ::-webkit-scrollbar-track {{ background: #0f172a; }}
+    ::-webkit-scrollbar-thumb {{ background: #334155; border-radius: 4px; }}
+    ::-webkit-scrollbar-thumb:hover {{ background: #475569; }}
+    @keyframes modalIn {{
+      from {{ opacity: 0; transform: scale(0.96) translateY(10px); }}
+      to {{ opacity: 1; transform: scale(1) translateY(0); }}
+    }}
+    .animate-modalIn {{ animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }}
+    .prose {{ line-height: 1.75; font-size: 0.875rem; }}
+    .prose h1, .prose h2, .prose h3, .prose h4 {{ color: #f8fafc; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }}
+    .prose h1 {{ font-size: 1.35rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }}
+    .prose h2 {{ font-size: 1.15rem; color: #60a5fa; }}
+    .prose h3 {{ font-size: 1.05rem; color: #93c5fd; }}
+    .prose p {{ margin-bottom: 1rem; color: #cbd5e1; }}
+    .prose ul, .prose ol {{ padding-left: 1.25rem; margin-bottom: 1rem; }}
+    .prose li {{ margin-bottom: 0.35rem; color: #e2e8f0; }}
+    .prose strong {{ color: #ffffff; font-weight: 600; }}
+    .prose blockquote {{ border-left: 4px solid #3b82f6; background: rgba(30, 41, 59, 0.5); padding: 0.75rem 1rem; border-radius: 0 0.75rem 0.75rem 0; margin: 1rem 0; color: #cbd5e1; }}
+    .prose code {{ background: #1e293b; color: #38bdf8; padding: 0.15rem 0.4rem; border-radius: 0.375rem; font-size: 0.8125rem; font-family: ui-monospace, monospace; }}
+    .prose hr {{ border: 0; border-top: 1px solid #334155; margin: 1.5rem 0; }}
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-xl shadow-lg shadow-blue-500/20">
+            <i class="ph-bold ph-book-open"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+                Youtube <span class="text-blue-400 font-semibold">AI Digest</span>
+              </h1>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 오프라인 아카이브
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400">서버 실행 없이 브라우저에서 영구 보존된 AI 심층 요약 리포트를 열람합니다.</p>
+          </div>
+        </div>
+
+        <!-- Export Date & Info -->
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex flex-col text-right">
+            <span class="text-[11px] text-slate-400">보관된 요약 리포트: <strong id="headerSummaryCount" class="text-emerald-400">0</strong>개</span>
+            <span class="text-[10px] text-slate-500 font-mono" id="headerExportDate">데이터 갱신: {data['exported_at']}</span>
+          </div>
+          <button onclick="window.print()" title="화면 인쇄" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-printer text-base"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Multi-Channel Selector Bar -->
+    <div class="bg-slate-950/70 border-t border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 overflow-x-auto py-0.5" id="channelSelectorBar">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Search & View Mode Toolbar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <span>📑 요약 리포트 아카이브</span>
+          <span id="activeChannelBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">전체</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">영상별 분초 단위 타임라인, 프롬프트 원문 복원, 한/영 대조 자막을 자유롭게 검색하고 열람하세요.</p>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-72">
+          <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" oninput="filterSummaries()" placeholder="제목, 키워드, 인사이트 검색..." 
+                 class="w-full bg-slate-800/90 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all shadow-inner">
+        </div>
+
+        <!-- View Mode Toggle -->
+        <div class="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-1 gap-1">
+          <button type="button" id="btnViewGrid" onclick="setViewMode('grid')" 
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-white bg-blue-600 shadow-sm"
+                  title="썸네일 카드형 보기">
+            <i class="ph-bold ph-squares-four text-sm"></i>
+            <span class="hidden sm:inline">썸네일형</span>
+          </button>
+          <button type="button" id="btnViewList" onclick="setViewMode('list')" 
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all text-slate-400 hover:text-white"
+                  title="리스트 목록형 보기">
+            <i class="ph-bold ph-list-dashes text-sm"></i>
+            <span class="hidden sm:inline">리스트형</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summaries Container -->
+    <div id="summariesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+  </main>
+
+  <!-- SUMMARY DETAIL MODAL -->
+  <div id="summaryModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div class="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col my-auto animate-modalIn">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-start justify-between gap-4 bg-slate-900/90 sticky top-0 z-10 backdrop-blur-md">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <span id="modalBadge24h" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              🔥 24h 신규
+            </span>
+            <span id="modalChannelBadge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              채널
+            </span>
+            <span id="modalModelBadge" class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              AI
+            </span>
+            <span id="modalPubTime" class="text-xs text-slate-400">게시일시</span>
+          </div>
+          <h3 id="modalTitle" class="text-lg font-bold text-white tracking-tight leading-snug">영상 제목</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copySummaryMarkdown()" title="마크다운 복사" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-copy text-base"></i>
+          </button>
+          <button onclick="downloadSummaryMarkdown()" title="마크다운 파일 다운로드" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-download-simple text-base"></i>
+          </button>
+          <button onclick="closeSummaryModal()" title="닫기 (ESC)" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-x text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        
+        <!-- Video Hero Card -->
+        <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div class="relative w-full sm:w-44 h-28 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0">
+            <img id="modalThumbnail" src="" class="w-full h-full object-cover">
+            <span id="modalDuration" class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-mono text-white">00:00</span>
+          </div>
+          <div class="flex-1 space-y-2">
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+              <span id="modalViews">조회수</span>
+              <span>•</span>
+              <span id="modalCreatedDate">분석일시</span>
+            </div>
+            <p id="modalOneLinerHeader" class="text-xs text-slate-300 font-medium leading-relaxed"></p>
+            <div>
+              <a id="modalVideoLink" href="#" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors">
+                <i class="ph-bold ph-youtube-logo text-base"></i> 유튜브 원본 영상 시청하기 <i class="ph ph-arrow-square-out"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Markdown Summary Content Area -->
+        <div id="modalMarkdownContent" class="prose max-w-none text-slate-300 bg-slate-800/40 border border-slate-700/60 rounded-2xl p-6 leading-relaxed">
+          <!-- Rendered via marked.js -->
+        </div>
+
+        <!-- Bilingual Subtitle Viewer Collapsible -->
+        <div class="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/50 shadow-inner">
+          <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border-b border-slate-800/80">
+            <button onclick="toggleTranscriptView()" class="flex items-center gap-2 text-left group">
+              <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <i class="ph-bold ph-translate text-sm"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                  자막 원본 & 한글 번역 이중 표기 (Bilingual Subtitles)
+                  <i id="transcriptToggleIcon" class="ph-bold ph-caret-down text-slate-400 transition-transform"></i>
+                </span>
+                <p class="text-[11px] text-slate-400">영어 원문과 한국어 번역을 타임스탬프와 함께 대조 열람할 수 있습니다.</p>
+              </div>
+            </button>
+
+            <!-- Subtitle Controls -->
+            <div id="transcriptControls" class="hidden flex items-center gap-2">
+              <div class="bg-slate-800 p-0.5 rounded-lg border border-slate-700 flex text-[11px]">
+                <button type="button" onclick="setSubtitleMode('bilingual')" id="subBtn-bilingual" class="px-2 py-1 rounded font-medium bg-blue-600 text-white shadow-sm transition-all">
+                  🌐 이중 표기
+                </button>
+                <button type="button" onclick="setSubtitleMode('ko')" id="subBtn-ko" class="px-2 py-1 rounded font-medium text-slate-400 hover:text-white transition-all">
+                  🇰🇷 한글만
+                </button>
+                <button type="button" onclick="setSubtitleMode('en')" id="subBtn-en" class="px-2 py-1 rounded font-medium text-slate-400 hover:text-white transition-all">
+                  🇺🇸 영문만
+                </button>
+              </div>
+              <button onclick="copyCurrentSubtitles()" title="자막 텍스트 복사" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors text-xs flex items-center gap-1">
+                <i class="ph ph-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Transcript Content Area -->
+          <div id="transcriptContentArea" class="hidden p-4 bg-slate-950/80 max-h-80 overflow-y-auto space-y-3 font-mono text-xs divide-y divide-slate-800/60 selection:bg-blue-600">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
+        <span class="text-xs text-slate-500">ConstructIQ Offline Archive Edition</span>
+        <button onclick="closeSummaryModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+          닫기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Embedded In-Memory JSON Dataset -->
+  <script id="OFFLINE_DATA" type="application/json">
+{json_str}
+  </script>
+
+  <!-- Client-Side Interactive Engine -->
+  <script>
+    const rawDataEl = document.getElementById('OFFLINE_DATA');
+    const appData = JSON.parse(rawDataEl.textContent || '{{}}');
+    
+    const allSummaries = appData.summaries || [];
+    const allChannels = appData.channels || [];
+    let selectedChannelId = 'all';
+    let currentViewMode = localStorage.getItem('offlineViewer_mode') || 'grid';
+    let currentViewingSummary = null;
+    let currentSubtitleMode = 'bilingual';
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {{
+      document.getElementById('headerSummaryCount').textContent = allSummaries.length;
+      renderChannelBar();
+      renderSummaries();
+      
+      // Close modal on Escape
+      window.addEventListener('keydown', (e) => {{
+        if (e.key === 'Escape') closeSummaryModal();
+      }});
+    }});
+
+    function renderChannelBar() {{
+      const bar = document.getElementById('channelSelectorBar');
+      if (!bar) return;
+
+      const totalCount = allSummaries.length;
+      const allActive = selectedChannelId === 'all';
+      
+      let html = `
+        <button type="button" onclick="selectChannel('all')" 
+                class="px-3 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${{allActive ? 'bg-blue-600 text-white border-blue-500 shadow-sm' : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'}}">
+          <i class="ph-bold ph-globe"></i>
+          <span>전체 (${{totalCount}})</span>
+        </button>
+      `;
+
+      // Unique channels from summaries
+      const channelMap = new Map();
+      allSummaries.forEach(s => {{
+        const chName = s.channel_name || 'ConstructIQ';
+        const chId = s.channel_id || chName;
+        channelMap.set(chId, {{
+          id: chId,
+          name: chName,
+          count: (channelMap.get(chId)?.count || 0) + 1
+        }});
+      }});
+
+      channelMap.forEach(ch => {{
+        const isActive = String(selectedChannelId) === String(ch.id);
+        html += `
+          <button type="button" onclick="selectChannel('${{ch.id}}')" 
+                  class="px-3 py-1 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all whitespace-nowrap ${{isActive ? 'bg-blue-600 text-white border-blue-500 shadow-sm' : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'}}">
+            <i class="ph-bold ph-television"></i>
+            <span>${{escapeHtml(ch.name)}} (${{ch.count}})</span>
+          </button>
+        `;
+      }});
+
+      bar.innerHTML = html;
+    }}
+
+    function selectChannel(chId) {{
+      selectedChannelId = chId;
+      const badge = document.getElementById('activeChannelBadge');
+      if (badge) {{
+        if (chId === 'all') {{
+          badge.textContent = '전체 채널';
+        }} else {{
+          const found = allSummaries.find(s => String(s.channel_id) === String(chId) || s.channel_name === chId);
+          badge.textContent = found ? found.channel_name : '선택 채널';
+        }}
+      }}
+      renderChannelBar();
+      renderSummaries();
+    }}
+
+    function setViewMode(mode) {{
+      currentViewMode = mode;
+      localStorage.setItem('offlineViewer_mode', mode);
+      
+      const btnGrid = document.getElementById('btnViewGrid');
+      const btnList = document.getElementById('btnViewList');
+      if (mode === 'list') {{
+        btnList.className = "px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-white bg-blue-600 shadow-sm";
+        btnGrid.className = "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all text-slate-400 hover:text-white";
+      }} else {{
+        btnGrid.className = "px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-white bg-blue-600 shadow-sm";
+        btnList.className = "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all text-slate-400 hover:text-white";
+      }}
+      renderSummaries();
+    }}
+
+    function filterSummaries() {{
+      renderSummaries();
+    }}
+
+    function getFilteredList() {{
+      const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+      return allSummaries.filter(s => {{
+        // Channel filter
+        if (selectedChannelId !== 'all') {{
+          if (String(s.channel_id) !== String(selectedChannelId) && s.channel_name !== selectedChannelId) {{
+            return false;
+          }}
+        }}
+        // Keyword query
+        if (query) {{
+          const target = [
+            s.title || '',
+            s.one_line_summary || '',
+            s.key_insights || '',
+            s.channel_name || ''
+          ].join(' ').toLowerCase();
+          if (!target.includes(query)) return false;
+        }}
+        return true;
+      }});
+    }}
+
+    function renderSummaries() {{
+      const container = document.getElementById('summariesContainer');
+      if (!container) return;
+
+      const filtered = getFilteredList();
+
+      if (filtered.length === 0) {{
+        container.className = "w-full";
+        container.innerHTML = `
+          <div class="py-16 text-center text-slate-400 bg-slate-800/30 rounded-2xl border border-slate-800">
+            <i class="ph ph-magnifying-glass text-4xl text-slate-500 mb-2"></i>
+            <p class="text-sm font-medium">검색 조건과 일치하는 요약 리포트가 없습니다.</p>
+          </div>
+        `;
+        return;
+      }}
+
+      if (currentViewMode === 'list') {{
+        container.className = "w-full";
+        container.innerHTML = `
+          <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/60 text-[11px]">
+                  <tr>
+                    <th class="py-3 px-3 sm:px-4 text-left min-w-[200px]">영상</th>
+                    <th class="py-3 px-3 whitespace-nowrap text-left">게시 일자</th>
+                    <th class="py-3 px-3 whitespace-nowrap text-left">재생시간 / 조회수</th>
+                    <th class="py-3 px-2.5 whitespace-nowrap text-center">24시간 여부</th>
+                    <th class="py-3 px-3 whitespace-nowrap text-center">요약 모델</th>
+                    <th class="py-3 px-3 sm:px-4 whitespace-nowrap text-right">작업</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-slate-300">
+                  ${{filtered.map(s => renderListRow(s)).join('')}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }} else {{
+        container.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5";
+        container.innerHTML = filtered.map(s => renderCard(s)).join('');
+      }}
+    }}
+
+    function renderCard(s) {{
+      const is24h = s.is_within_24h == 1;
+      const thumb = s.thumbnail_url || `https://i.ytimg.com/vi/${{s.video_id}}/hqdefault.jpg`;
+      const chName = s.channel_name || 'ConstructIQ';
+
+      return `
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-blue-500/50 hover:shadow-xl transition-all group">
+          <div>
+            <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
+              <img src="${{thumb}}" alt="${{escapeHtml(s.title)}}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              ${{is24h ? `
+                <span class="absolute top-3 left-3 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500 text-slate-950 shadow">
+                  🔥 24h 신규
+                </span>
+              ` : ''}}
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-indigo-950/90 border border-indigo-500/40 text-[10px] font-semibold text-indigo-200 shadow">
+                📺 ${{escapeHtml(chName)}}
+              </span>
+              <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[11px] font-mono text-white">
+                ${{s.duration_text || 'Video'}}
+              </span>
+            </div>
+
+            <div class="p-4 space-y-2.5">
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1"><i class="ph ph-clock"></i> ${{s.published_time_text || s.published_date || '게시'}}</span>
+                <span class="px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 text-[10px] font-mono truncate max-w-[130px]">
+                  ${{escapeHtml(s.model_used || 'AI')}}
+                </span>
+              </div>
+
+              <h3 class="text-sm font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
+                ${{escapeHtml(s.title)}}
+              </h3>
+
+              <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">
+                ${{escapeHtml(s.one_line_summary || '')}}
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 pt-0 border-t border-slate-700/40 mt-3 flex items-center justify-between">
+            <a href="${{s.video_url || 'https://www.youtube.com/watch?v=' + s.video_id}}" target="_blank" class="text-xs text-slate-400 hover:text-red-400 flex items-center gap-1 transition-colors">
+              <i class="ph-bold ph-youtube-logo text-base text-red-500"></i> 원본
+            </a>
+            <button onclick="openSummaryModal('${{s.video_id}}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600/90 hover:bg-blue-600 text-white flex items-center gap-1.5 shadow-sm transition-all">
+              <span>디테일 요약 보기</span>
+              <i class="ph-bold ph-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }}
+
+    function renderListRow(s) {{
+      const is24h = s.is_within_24h == 1;
+      const thumb = s.thumbnail_url || `https://i.ytimg.com/vi/${{s.video_id}}/hqdefault.jpg`;
+      const chName = s.channel_name || 'ConstructIQ';
+      const pubDate = s.published_date || '-';
+      const pubTime = s.published_time_text || '';
+
+      return `
+        <tr class="hover:bg-slate-800/40 transition-colors bg-emerald-950/15">
+          <td class="py-3 px-3 sm:px-4">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <img src="${{thumb}}" class="w-12 h-8 sm:w-14 sm:h-9 rounded object-cover flex-shrink-0 bg-slate-950">
+              <div class="min-w-0 flex-1">
+                <a href="${{s.video_url || 'https://www.youtube.com/watch?v=' + s.video_id}}" target="_blank" class="font-semibold text-white hover:text-blue-400 transition-colors line-clamp-1 block text-xs" title="${{escapeHtml(s.title)}}">
+                  ${{escapeHtml(s.title)}}
+                </a>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-semibold flex-shrink-0">${{escapeHtml(chName)}}</span>
+                  ${{s.is_custom_added == 1 ? '<span class="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-semibold flex-shrink-0">URL 직접등록</span>' : ''}}
+                  <span class="text-[10px] text-slate-500 font-mono truncate">ID: ${{s.video_id}}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-3 whitespace-nowrap">
+            <div class="font-mono text-xs font-semibold text-white">${{pubDate}}</div>
+            <div class="text-[10px] text-slate-400">${{pubTime}}</div>
+          </td>
+          <td class="py-3 px-3 whitespace-nowrap">
+            <div class="text-xs text-slate-300 font-medium">${{s.duration_text || '-'}}</div>
+            <div class="text-[10px] text-slate-400">${{s.view_count_text || '-'}}</div>
+          </td>
+          <td class="py-3 px-2.5 text-center whitespace-nowrap">
+            ${{is24h ? `
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                24h 이내
+              </span>
+            ` : `
+              <span class="text-slate-500 text-[11px]">-</span>
+            `}}
+          </td>
+          <td class="py-3 px-3 text-center whitespace-nowrap">
+            <div class="inline-flex flex-col items-center gap-0.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap inline-flex items-center gap-1">
+                <i class="ph-bold ph-seal-check"></i> 요약 보관됨
+              </span>
+              <span class="text-[9px] text-emerald-400/80 font-mono">${{escapeHtml(s.model_used || 'AI')}}</span>
+            </div>
+          </td>
+          <td class="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
+            <button onclick="openSummaryModal('${{s.video_id}}')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/90 hover:bg-emerald-600 text-white transition-all inline-flex items-center gap-1 shadow-sm">
+              <i class="ph-bold ph-book-open"></i> 요약 리포트 열기
+            </button>
+          </td>
+        </tr>
+      `;
+    }}
+
+    function openSummaryModal(videoId) {{
+      const data = allSummaries.find(s => s.video_id === videoId);
+      if (!data) return;
+      currentViewingSummary = data;
+
+      document.getElementById('modalTitle').textContent = data.title || '';
+      document.getElementById('modalPubTime').textContent = data.published_time_text || data.published_date || '최근';
+      document.getElementById('modalModelBadge').textContent = data.model_used || 'AI';
+      document.getElementById('modalChannelBadge').textContent = data.channel_name || 'ConstructIQ';
+      document.getElementById('modalDuration').textContent = data.duration_text || '-';
+      document.getElementById('modalViews').textContent = data.view_count_text ? `조회수: ${{data.view_count_text}}` : '조회수 정보 없음';
+      document.getElementById('modalCreatedDate').textContent = `분석일시: ${{data.created_at || '-'}}`;
+      document.getElementById('modalOneLinerHeader').textContent = data.one_line_summary || '';
+
+      const thumb = data.thumbnail_url || `https://i.ytimg.com/vi/${{videoId}}/hqdefault.jpg`;
+      document.getElementById('modalThumbnail').src = thumb;
+      document.getElementById('modalVideoLink').href = data.video_url || `https://www.youtube.com/watch?v=${{videoId}}`;
+
+      const badge = document.getElementById('modalBadge24h');
+      if (data.is_within_24h == 1) {{
+        badge.classList.remove('hidden');
+      }} else {{
+        badge.classList.add('hidden');
+      }}
+
+      // Render Markdown
+      const mdContent = data.full_summary_md || `# ${{data.title}}\n\n${{data.one_line_summary}}`;
+      if (window.marked && typeof marked.parse === 'function') {{
+        document.getElementById('modalMarkdownContent').innerHTML = marked.parse(mdContent);
+      }} else {{
+        document.getElementById('modalMarkdownContent').textContent = mdContent;
+      }}
+
+      // Bilingual Subtitles setup
+      currentSubtitleMode = 'bilingual';
+      renderBilingualSubtitles();
+      document.getElementById('transcriptContentArea').classList.add('hidden');
+      document.getElementById('transcriptControls').classList.add('hidden');
+      document.getElementById('transcriptToggleIcon').className = "ph-bold ph-caret-down text-slate-400";
+
+      document.getElementById('summaryModal').classList.remove('hidden');
+    }}
+
+    function closeSummaryModal() {{
+      const modal = document.getElementById('summaryModal');
+      if (modal) modal.classList.add('hidden');
+    }}
+
+    function toggleTranscriptView() {{
+      const area = document.getElementById('transcriptContentArea');
+      const ctrls = document.getElementById('transcriptControls');
+      const icon = document.getElementById('transcriptToggleIcon');
+      if (!area || !ctrls) return;
+
+      const isHidden = area.classList.contains('hidden');
+      if (isHidden) {{
+        area.classList.remove('hidden');
+        ctrls.classList.remove('hidden');
+        if (icon) icon.className = "ph-bold ph-caret-up text-blue-400";
+      }} else {{
+        area.classList.add('hidden');
+        ctrls.classList.add('hidden');
+        if (icon) icon.className = "ph-bold ph-caret-down text-slate-400";
+      }}
+    }}
+
+    function setSubtitleMode(mode) {{
+      currentSubtitleMode = mode;
+      ['bilingual', 'ko', 'en'].forEach(m => {{
+        const btn = document.getElementById(`subBtn-${{m}}`);
+        if (btn) {{
+          if (m === mode) {{
+            btn.className = "px-2 py-1 rounded font-medium bg-blue-600 text-white shadow-sm transition-all";
+          }} else {{
+            btn.className = "px-2 py-1 rounded font-medium text-slate-400 hover:text-white transition-all";
+          }}
+        }}
+      }});
+      renderBilingualSubtitles();
+    }}
+
+    function parseTimestampToSeconds(tsStr) {{
+      const parts = tsStr.replace(/[\\[\\]]/g, '').trim().split(':');
+      if (parts.length === 2) {{
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      }} else if (parts.length === 3) {{
+        return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+      }}
+      return 0;
+    }}
+
+    function renderBilingualSubtitles() {{
+      const area = document.getElementById('transcriptContentArea');
+      if (!area || !currentViewingSummary) return;
+
+      const rawBilingual = currentViewingSummary.bilingual_transcript || "";
+      const rawText = currentViewingSummary.transcript_raw || "";
+      const videoId = currentViewingSummary.video_id;
+
+      if (!rawBilingual && !rawText) {{
+        area.innerHTML = `<p class="py-4 text-center text-slate-500">등록된 자막 정보가 없습니다.</p>`;
+        return;
+      }}
+
+      let blocks = [];
+      if (rawBilingual && (rawBilingual.includes('(EN)') || rawBilingual.includes('(KO)'))) {{
+        const rawChunks = rawBilingual.split(/\\n\\s*\\n/);
+        for (const chunk of rawChunks) {{
+          const trimmed = chunk.trim();
+          if (!trimmed) continue;
+          const tsMatch = trimmed.match(/\\[(\\d{{1,2}}:\\d{{2}}(?::\\d{{2}})?)\\]/);
+          const ts = tsMatch ? tsMatch[1] : "00:00";
+          const enMatch = trimmed.match(/\\(EN\\)\\s*([\\s\\S]*?)(?=\\(KO\\)|$)/);
+          const koMatch = trimmed.match(/\\(KO\\)\\s*([\\s\\S]*?)$/);
+          blocks.push({{
+            timestamp: ts,
+            en: enMatch ? enMatch[1].trim() : "",
+            ko: koMatch ? koMatch[1].trim() : ""
+          }});
+        }}
+      }} else {{
+        blocks.push({{
+          timestamp: "00:00",
+          en: rawText,
+          ko: "원문 텍스트"
+        }});
+      }}
+
+      area.innerHTML = blocks.map(b => {{
+        const sec = parseTimestampToSeconds(b.timestamp);
+        const ytLink = `https://www.youtube.com/watch?v=${{videoId}}&t=${{sec}}s`;
+        
+        return `
+          <div class="pt-2.5 pb-2">
+            <div class="flex items-center justify-between mb-1">
+              <a href="${{ytLink}}" target="_blank" class="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 text-[11px] group">
+                <i class="ph-bold ph-play-circle text-xs text-blue-400 group-hover:scale-110 transition-transform"></i>
+                [${{b.timestamp}}] 재생 시점으로 이동
+              </a>
+            </div>
+            ${{currentSubtitleMode !== 'en' && b.ko ? `
+              <p class="text-slate-200 font-sans leading-relaxed text-xs ${{currentSubtitleMode === 'bilingual' ? 'mb-1 font-medium' : ''}}">
+                ${{escapeHtml(b.ko)}}
+              </p>
+            ` : ''}}
+            ${{currentSubtitleMode !== 'ko' && b.en ? `
+              <p class="text-slate-400 font-mono text-[11px] leading-relaxed">
+                ${{escapeHtml(b.en)}}
+              </p>
+            ` : ''}}
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    function copySummaryMarkdown() {{
+      if (!currentViewingSummary) return;
+      const text = currentViewingSummary.full_summary_md || currentViewingSummary.one_line_summary;
+      navigator.clipboard.writeText(text).then(() => {{
+        showToast("마크다운 요약본이 클립보드에 복사되었습니다.", "success");
+      }}).catch(() => {{
+        showToast("복사 실패", "error");
+      }});
+    }}
+
+    function downloadSummaryMarkdown() {{
+      if (!currentViewingSummary) return;
+      const text = currentViewingSummary.full_summary_md || currentViewingSummary.one_line_summary;
+      const safeTitle = (currentViewingSummary.title || 'Summary').replace(/[/\\\\?%*:|"<>]/g, '_');
+      const blob = new Blob([text], {{ type: 'text/markdown;charset=utf-8' }});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `[요약리포트]_${{safeTitle}}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("마크다운 파일 다운로드가 시작되었습니다.", "success");
+    }}
+
+    function copyCurrentSubtitles() {{
+      if (!currentViewingSummary) return;
+      const text = currentViewingSummary.bilingual_transcript || currentViewingSummary.transcript_raw;
+      navigator.clipboard.writeText(text).then(() => {{
+        showToast("자막 텍스트가 클립보드에 복사되었습니다.", "success");
+      }}).catch(() => {{
+        showToast("복사 실패", "error");
+      }});
+    }}
+
+    function showToast(message, type = "info") {{
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      
+      let bg = "bg-slate-800 border-slate-700 text-slate-200";
+      let icon = "ph-info text-blue-400";
+      if (type === "success") {{
+        bg = "bg-emerald-950 border-emerald-600 text-emerald-100";
+        icon = "ph-check-circle text-emerald-400";
+      }} else if (type === "error") {{
+        bg = "bg-red-950 border-red-600 text-red-100";
+        icon = "ph-x-circle text-red-400";
+      }}
+
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-xl text-xs pointer-events-auto transition-all duration-300 transform translate-y-2 opacity-0 ${{bg}}`;
+      toast.innerHTML = `<i class="ph-bold ${{icon}} text-base flex-shrink-0"></i> <span>${{escapeHtml(message)}}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {{
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }}, 10);
+
+      setTimeout(() => {{
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }}, 3500);
+    }}
+
+    function escapeHtml(text) {{
+      if (!text) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }}
+  </script>
+</body>
+</html>
+"""
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+        
+    print(f"[Offline Exporter] Successfully exported {len(data['summaries'])} summaries to {output_path}")
+    return output_path
+
+if __name__ == "__main__":
+    export_offline_viewer()

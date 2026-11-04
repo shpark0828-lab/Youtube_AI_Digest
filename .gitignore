@@ -1,0 +1,27 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temp
+*.log
+*.tmp
+temp/
+
+# Antigravity & IDE
+.gemini/
+.idea/
+.vscode/
+
+# Local custom data (preserve initial template DB, ignore runtime DB backups)
+*.sqlite-journal
+*.sqlite-wal

@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youtube AI Digest | 매일 아침 9시 유튜브 자동 요약 대시보드</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            accent: {
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Marked.js (Markdown renderer) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-['Pretendard'] antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-amber-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-bold text-xl">
+          <i class="ph-bold ph-hard-hat"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+              Youtube <span class="text-blue-400 font-semibold">AI Digest</span>
+            </h1>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> 매일 09:00 자동 조사
+            </span>
+          </div>
+          <p id="headerChannelSubtitle" class="text-xs text-slate-400 truncate max-w-xs sm:max-w-md">등록된 전체 유튜브 채널 24시간 신규 영상 통합 분석 리포트</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex items-center gap-3">
+        <a id="headerChannelLink" href="#" style="display: none;" target="_blank" rel="noopener noreferrer" 
+           class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/10 text-red-400 border border-red-500/20 hover:bg-red-600/20 transition-all">
+          <i class="ph-bold ph-youtube-logo text-base"></i> <span id="headerChannelLinkText">채널 바로가기</span>
+        </a>
+        <button id="btnRunNow" onclick="triggerManualRun()" 
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-all">
+          <i id="btnRunIcon" class="ph-bold ph-play"></i>
+          <span id="btnRunText">지금 24h 조사 및 요약</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Multi-Channel Switcher Bar -->
+    <div class="bg-slate-950/70 border-t border-slate-800/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 overflow-x-auto py-0.5" id="channelSelectorBar">
+          <!-- Dynamically populated channel chips -->
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportOfflineViewer()" 
+                  class="px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 transition-all whitespace-nowrap shadow-sm"
+                  title="서버 없이 브라우저에서 바로 열 수 있는 독립 오프라인 뷰어 파일 갱신 및 열기">
+            <i class="ph-bold ph-download-simple text-sm text-indigo-400"></i>
+            <span>오프라인 뷰어</span>
+          </button>
+          <button type="button" onclick="openSingleVideoModal()" 
+                  class="px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 flex items-center gap-1.5 transition-all whitespace-nowrap shadow-sm"
+                  title="특정 유튜브 동영상 주소를 직접 입력하여 목록에 추가하고 요약">
+            <i class="ph-bold ph-plus-circle text-sm text-blue-400"></i>
+            <span>개별 동영상 URL 추가</span>
+          </button>
+          <button type="button" onclick="openChannelManagerModal()" 
+                  class="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition-all whitespace-nowrap shadow-sm">
+            <i class="ph-bold ph-gear-six text-sm"></i>
+            <span>유튜브 채널 추가 / 관리</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 border-t border-slate-800/60 overflow-x-auto py-1">
+      <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="tab-btn active-tab">
+        <i class="ph-bold ph-squares-four text-base"></i> 대시보드
+      </button>
+      <button onclick="switchTab('summaries')" id="tabBtn-summaries" class="tab-btn">
+        <i class="ph-bold ph-file-text text-base"></i> 요약 아카이브
+      </button>
+      <button onclick="switchTab('videos')" id="tabBtn-videos" class="tab-btn">
+        <i class="ph-bold ph-video-camera text-base"></i> 채널 영상 목록
+      </button>
+      <button onclick="switchTab('logs')" id="tabBtn-logs" class="tab-btn">
+        <i class="ph-bold ph-clock-counter-clockwise text-base"></i> 실행 로그
+      </button>
+      <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-btn">
+        <i class="ph-bold ph-gear text-base"></i> 스케줄 및 AI 설정
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Global Toast Alert Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="space-y-6">
+      
+      <!-- Quick Gemini Key Banner -->
+      <div id="quickGeminiBanner" class="p-4 sm:p-5 rounded-2xl border transition-all duration-300">
+        <!-- Dynamically rendered via renderQuickGeminiBanner() in app.js -->
+      </div>
+      
+      <!-- Status Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Card 1: Daily Schedule -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:border-slate-600 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">자동 스케줄</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <i class="ph-bold ph-alarm text-lg"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="statScheduleTime" class="text-2xl font-bold text-white tracking-tight">매일 09:00</span>
+            <span id="statAutoStatus" class="text-xs text-emerald-400 font-medium">활성중</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <i class="ph ph-clock"></i> 다음 실행: <span id="statNextRun" class="text-slate-300 font-mono">로딩중...</span>
+          </p>
+        </div>
+
+        <!-- Card 2: 24h Videos Detected -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:border-slate-600 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">24시간 이내 신규 영상</span>
+            <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <i class="ph-bold ph-sparkle text-lg"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="statRecentCount" class="text-2xl font-bold text-white tracking-tight">-</span>
+            <span class="text-xs text-slate-400">개 감지됨</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <i class="ph ph-hourglass-high"></i> 기준: <span id="statFilterHours" class="text-slate-300">최근 24시간</span>
+          </p>
+        </div>
+
+        <!-- Card 3: Summaries Completed -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:border-slate-600 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">누적 상세 요약본</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <i class="ph-bold ph-book-open text-lg"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="statSummaryCount" class="text-2xl font-bold text-white tracking-tight">-</span>
+            <span class="text-xs text-slate-400">개 보관중</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <i class="ph ph-check-circle"></i> 상태: <span class="text-emerald-400">열람 즉시 가능</span>
+          </p>
+        </div>
+
+        <!-- Card 4: AI Model Status -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:border-slate-600 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">AI 분석 엔진</span>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <i class="ph-bold ph-cpu text-lg"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="statAiProvider" class="text-xl font-bold text-white tracking-tight">Gemini 2.5</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <span id="statAiKeyIndicator" class="inline-block w-2 h-2 rounded-full bg-slate-500"></span>
+            <span id="statAiKeyText" class="text-slate-300">내장 스마트 엔진</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Job Banner (Hidden by default, shown when running) -->
+      <div id="liveBanner" class="hidden bg-gradient-to-r from-blue-900/60 via-indigo-900/40 to-slate-800/60 border border-blue-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="animate-spin text-blue-400 text-2xl">
+            <i class="ph-bold ph-spinner-gap"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-white">유튜브 채널 조사 및 요약 작업 진행 중...</h4>
+            <p class="text-xs text-blue-300/80">최신 업로드 동영상을 확인하고 자막 추출 및 AI 분석을 수행하고 있습니다.</p>
+          </div>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse">Running</span>
+      </div>
+
+      <!-- Recent 24h Videos Spotlight -->
+      <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/60 gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="ph-fill ph-fire text-amber-500 text-lg"></i> 최근 24시간 신규 영상
+              </h2>
+              <span id="spotlightCountBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">1개</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">매일 아침 09:00에 자동 검사 및 요약되는 최신 비디오입니다.</p>
+          </div>
+          <button onclick="syncVideos()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 self-start sm:self-center transition-colors">
+            <i class="ph ph-arrows-clockwise text-sm"></i> 유튜브 실시간 동기화
+          </button>
+        </div>
+
+        <!-- Spotlight List -->
+        <div id="spotlightContainer" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Recent Summaries Feed -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="ph-bold ph-list-dashes text-blue-400 text-lg"></i> 상세 요약 리포트 피드
+            </h2>
+            <p class="text-xs text-slate-400">AI가 타임라인, 핵심 테이크어웨이, 건설 실무 적용법을 분석한 리포트입니다.</p>
+          </div>
+          <button onclick="switchTab('summaries')" class="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
+            전체 아카이브 보기 <i class="ph-bold ph-arrow-right"></i>
+          </button>
+        </div>
+
+        <div id="summariesFeed" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: SUMMARIES ARCHIVE -->
+    <section id="tab-summaries" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">📑 요약 리포트 아카이브</h2>
+          <p class="text-xs text-slate-400">ConstructIQ 채널의 영상에 대해 생성된 모든 상세 AI 요약본입니다.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="relative w-full sm:w-64">
+            <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+            <input type="text" id="summarySearchInput" oninput="filterSummaries()" placeholder="제목 또는 키워드 검색..." 
+                   class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all">
+          </div>
+
+          <!-- View Mode Toggle (Thumbnail Card vs List View) -->
+          <div class="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-1 gap-1">
+            <button type="button" id="btnArchiveViewGrid" onclick="setArchiveViewMode('grid')" 
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all text-white bg-blue-600 shadow-sm"
+                    title="썸네일 카드형 보기">
+              <i class="ph-bold ph-squares-four text-sm"></i>
+              <span class="hidden sm:inline">썸네일형</span>
+            </button>
+            <button type="button" id="btnArchiveViewList" onclick="setArchiveViewMode('list')" 
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all text-slate-400 hover:text-white"
+                    title="리스트 목록형 보기">
+              <i class="ph-bold ph-list-dashes text-sm"></i>
+              <span class="hidden sm:inline">리스트형</span>
+            </button>
+          </div>
+
+          <button type="button" onclick="exportOfflineViewer()" 
+                  class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-all shadow-sm"
+                  title="서버 없이 브라우저에서 바로 열 수 있는 독립 오프라인 뷰어 파일 갱신 및 열기">
+            <i class="ph-bold ph-download-simple text-sm text-indigo-400"></i>
+            <span class="hidden md:inline">오프라인 뷰어</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Category Filter Bar (shown in Custom Videos view) -->
+      <div id="archiveCategoryFilterBar" class="hidden bg-slate-800/70 border border-slate-700/70 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        <!-- Dynamically populated -->
+      </div>
+
+      <div id="archiveContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Dynamically populated -->
+      </div>
+    </section>
+
+    <!-- TAB 3: ALL CHANNEL VIDEOS -->
+    <section id="tab-videos" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">📺 채널 동영상 전체 목록</h2>
+          <p class="text-xs text-slate-400">@ConstructIQ 채널의 최근 30개 동영상 현황 및 개별 요약 요청 기능입니다.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openSingleVideoModal()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 transition-all shadow-sm">
+            <i class="ph-bold ph-link text-sm"></i> 개별 영상 직접 등록
+          </button>
+          <button id="btnSyncVideos" onclick="syncVideos()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-white flex items-center gap-1.5 transition-all shadow-sm">
+            <i id="btnSyncVideosIcon" class="ph-bold ph-arrows-clockwise"></i> 채널 실시간 동기화
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Category Filter Bar (shown in Custom Videos view) -->
+      <div id="videosCategoryFilterBar" class="hidden bg-slate-800/70 border border-slate-700/70 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        <!-- Dynamically populated -->
+      </div>
+
+      <!-- Date Range Filter & Summary Protection Bar -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          
+          <!-- Date Pickers -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mr-1">
+              <i class="ph-bold ph-calendar text-blue-400"></i> 게시 날짜 지정:
+            </span>
+            <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 transition-colors">
+              <label for="videoFilterStartDate" class="text-[11px] text-slate-400">시작</label>
+              <input type="date" id="videoFilterStartDate" onchange="onDateInputChange()"
+                     class="bg-transparent text-xs text-white focus:outline-none font-mono cursor-pointer">
+            </div>
+            <span class="text-slate-500 text-xs">~</span>
+            <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 transition-colors">
+              <label for="videoFilterEndDate" class="text-[11px] text-slate-400">종료</label>
+              <input type="date" id="videoFilterEndDate" onchange="onDateInputChange()"
+                     class="bg-transparent text-xs text-white focus:outline-none font-mono cursor-pointer">
+            </div>
+            <button onclick="applyDateFilter()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center gap-1 shadow-sm">
+              <i class="ph-bold ph-funnel"></i> 날짜 지정 조회
+            </button>
+            <button onclick="resetDateFilter()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
+              초기화
+            </button>
+          </div>
+
+          <!-- Summary Protection Option -->
+          <div class="flex items-center gap-2 bg-emerald-950/30 border border-emerald-500/30 rounded-xl px-3 py-1.5">
+            <input type="checkbox" id="chkKeepSummarizedVideos" checked onchange="applyDateFilter()"
+                   class="rounded bg-slate-900 border-emerald-500 text-emerald-500 focus:ring-0 cursor-pointer">
+            <label for="chkKeepSummarizedVideos" class="text-xs font-medium text-emerald-300 cursor-pointer select-none flex items-center gap-1">
+              <i class="ph-bold ph-shield-check"></i> 요약 리포트 작성 영상 목록에 영구 보존
+            </label>
+          </div>
+        </div>
+
+        <!-- Quick Filter Chips & Stats -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-700/60">
+          <div class="flex flex-wrap items-center gap-1.5" id="quickDateChips">
+            <span class="text-[11px] text-slate-400 mr-1">빠른 선택:</span>
+            <button type="button" onclick="setQuickDateRange('all')" id="chip-all" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600 text-white border border-blue-500">전체</button>
+            <button type="button" onclick="setQuickDateRange('today')" id="chip-today" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">오늘</button>
+            <button type="button" onclick="setQuickDateRange('24h')" id="chip-24h" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 24시간</button>
+            <button type="button" onclick="setQuickDateRange('3d')" id="chip-3d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 3일</button>
+            <button type="button" onclick="setQuickDateRange('7d')" id="chip-7d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 7일</button>
+            <button type="button" onclick="setQuickDateRange('30d')" id="chip-30d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 30일</button>
+            <button type="button" onclick="setQuickDateRange('60d')" id="chip-60d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 60일</button>
+            <button type="button" onclick="setQuickDateRange('90d')" id="chip-90d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 90일</button>
+            <button type="button" onclick="setQuickDateRange('120d')" id="chip-120d" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700">최근 120일</button>
+            <button type="button" onclick="setQuickDateRange('summarized')" id="chip-summarized" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-slate-700 flex items-center gap-1">
+              <i class="ph-bold ph-book-open"></i> 요약 완료 영상만 (<span id="chipSummarizedCount">0</span>개)
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-400 font-mono">
+            표시: <span id="filteredVideosCount" class="font-bold text-white">0</span>개 / 
+            요약보관: <span id="filteredSummarizedCount" class="font-bold text-emerald-400">0</span>개
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs table-fixed">
+            <colgroup>
+              <col class="w-auto">
+              <col class="w-24">
+              <col class="w-24">
+              <col class="w-24">
+              <col class="w-28">
+              <col class="w-24">
+              <col class="w-24">
+              <col class="w-36">
+            </colgroup>
+            <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/60 select-none">
+              <tr>
+                <th onclick="toggleVideoSort('title')" class="py-3 px-3 sm:px-4 text-left cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center gap-1">
+                    <span>영상</span>
+                    <span id="sortIcon-title" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('custom_category')" class="py-3 px-2 whitespace-nowrap text-left cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center gap-1">
+                    <span>분류</span>
+                    <span id="sortIcon-custom_category" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('published_date')" class="py-3 px-2 whitespace-nowrap text-left cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center gap-1">
+                    <span>게시 일자</span>
+                    <span id="sortIcon-published_date" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('discovered_at')" class="py-3 px-2 whitespace-nowrap text-left cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center gap-1">
+                    <span>추가 일자</span>
+                    <span id="sortIcon-discovered_at" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('duration')" class="py-3 px-2 whitespace-nowrap text-left cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center gap-1">
+                    <span>재생시간 / 조회수</span>
+                    <span id="sortIcon-duration" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('is_within_24h')" class="py-3 px-2 whitespace-nowrap text-center cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>24시간 여부</span>
+                    <span id="sortIcon-is_within_24h" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th onclick="toggleVideoSort('has_summary')" class="py-3 px-2 whitespace-nowrap text-center cursor-pointer hover:text-white hover:bg-slate-800/60 transition-colors group">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>요약 상태</span>
+                    <span id="sortIcon-has_summary" class="text-[10px] text-slate-600 group-hover:text-slate-300 font-mono">↕</span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 sm:px-4 whitespace-nowrap text-right">작업</th>
+              </tr>
+            </thead>
+            <tbody id="videosTableBody" class="divide-y divide-slate-800 text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: RUN LOGS -->
+    <section id="tab-logs" class="hidden space-y-6">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white">📜 스케줄 및 실행 로그</h2>
+          <p class="text-xs text-slate-400">매일 아침 09:00 자동 조사 및 수동 실행된 작업 히스토리입니다.</p>
+        </div>
+        <button onclick="loadLogs()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+          <i class="ph ph-arrows-clockwise"></i> 새로고침
+        </button>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700/60 text-[11px]">
+              <tr>
+                <th class="py-3 px-3 sm:px-4 whitespace-nowrap text-left">실행 일시</th>
+                <th class="py-3 px-3 whitespace-nowrap text-left">트리거</th>
+                <th class="py-3 px-3 whitespace-nowrap text-left">발견 영상</th>
+                <th class="py-3 px-3 whitespace-nowrap text-left">24h 영상</th>
+                <th class="py-3 px-3 whitespace-nowrap text-left">요약 완료</th>
+                <th class="py-3 px-3 whitespace-nowrap text-center">상태</th>
+                <th class="py-3 px-3 sm:px-4 text-left min-w-[200px]">메시지</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody" class="divide-y divide-slate-800 text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SETTINGS -->
+    <section id="tab-settings" class="hidden space-y-6 max-w-3xl">
+      <div class="pb-4 border-b border-slate-800">
+        <h2 class="text-xl font-bold text-white">⚙️ 스케줄 & AI 모니터링 환경 설정</h2>
+        <p class="text-xs text-slate-400">스케줄 주기, 대상 채널, AI 모델 및 알림 설정을 자유롭게 조정할 수 있습니다.</p>
+      </div>
+
+      <form id="settingsForm" onsubmit="saveSettings(event)" class="space-y-6">
+        
+        <!-- Schedule Settings Card -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="ph-bold ph-calendar-check text-blue-400"></i> 자동 실행 스케줄 설정
+          </h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">매일 자동 실행 시각 (기본 09:00)</label>
+              <input type="time" id="settingScheduleTime" required
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+              <p class="text-[11px] text-slate-400 mt-1">시스템 타임존 기준 매일 해당 시각에 자동 실행됩니다.</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">조사 대상 기간 (시간 단위)</label>
+              <select id="settingTimeFilter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                <option value="12">최근 12시간 이내</option>
+                <option value="24" selected>최근 24시간 이내 (기본 권장)</option>
+                <option value="48">최근 48시간 이내 (주말 대응)</option>
+                <option value="72">최근 72시간 이내</option>
+              </select>
+              <p class="text-[11px] text-slate-400 mt-1">지정된 시간 이내에 게시된 동영상만 요약 대상으로 수집합니다.</p>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-slate-300">기본 유튜브 채널 URL</label>
+              <button type="button" onclick="openChannelManagerModal()" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                <i class="ph-bold ph-plus-circle"></i> 다중 유튜브 채널 추가 및 관리 열기
+              </button>
+            </div>
+            <input type="url" id="settingChannelUrl" required
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono text-xs">
+            <p class="text-[11px] text-slate-400 mt-1">예: https://www.youtube.com/@채널명/videos (상단 [유튜브 채널 추가 / 관리]에서 여러 채널을 등록해 함께 사용할 수 있습니다)</p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <input type="checkbox" id="settingAutoEnabled" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-blue-500">
+            <label for="settingAutoEnabled" class="text-xs text-slate-300 font-medium">자동 스케줄러 활성화</label>
+          </div>
+        </div>
+
+        <!-- AI Engine Settings Card -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="ph-bold ph-brain text-purple-400"></i> AI 요약 엔진 설정
+            </h3>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              API 키 없어도 내장 요약기 즉시 작동
+            </span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">요약 AI 제공자</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-slate-500 transition-all">
+                <input type="radio" name="ai_provider" value="gemini" checked onchange="toggleAiInputs()" class="text-blue-600">
+                <span class="text-xs font-medium text-white">Google Gemini</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-slate-500 transition-all">
+                <input type="radio" name="ai_provider" value="openai" onchange="toggleAiInputs()" class="text-blue-600">
+                <span class="text-xs font-medium text-white">OpenAI (ChatGPT)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-slate-500 transition-all">
+                <input type="radio" name="ai_provider" value="extractive" onchange="toggleAiInputs()" class="text-blue-600">
+                <span class="text-xs font-medium text-white">내장 스마트 요약기</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Detail Level Settings -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span>요약 상세도 (Detail Level) — 분량 및 타임라인 밀도 조절</span>
+              <span class="text-amber-400 text-[11px] font-medium">★ 분야별 관점은 각 채널/영상의 [AI 요약 스타일]에서 선택</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <label class="flex flex-col p-3 rounded-xl border border-blue-500/40 bg-blue-950/20 cursor-pointer hover:border-blue-400 transition-all">
+                <div class="flex items-center gap-2">
+                  <input type="radio" name="detail_level" value="ultra_detailed" checked class="text-blue-600">
+                  <span class="text-xs font-bold text-white">🔍 초정밀 심층 요약</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 pl-5">45초 단위 촘촘한 타임라인(10~15개) + 심층 인사이트 8~10개 + 프롬프트/수식 원문 완전 복원</p>
+              </label>
+              <label class="flex flex-col p-3 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-slate-500 transition-all">
+                <div class="flex items-center gap-2">
+                  <input type="radio" name="detail_level" value="standard" class="text-blue-600">
+                  <span class="text-xs font-bold text-white">📋 표준 핵심 요약</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 pl-5">90초 단위 주요 챕터 타임라인(5~7개) + 핵심 인사이트 5~6개 중심의 균형 잡힌 요약</p>
+              </label>
+              <label class="flex flex-col p-3 rounded-xl border border-slate-700 bg-slate-900 cursor-pointer hover:border-slate-500 transition-all">
+                <div class="flex items-center gap-2">
+                  <input type="radio" name="detail_level" value="brief" class="text-blue-600">
+                  <span class="text-xs font-bold text-white">⚡ 3분 핵심 브리핑</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 pl-5">180초 단위 대주제 파트(3~4개) + 핵심 결론 3~4개만 빠르게 스캔하는 초압축 브리핑</p>
+              </label>
+            </div>
+          </div>
+
+          <!-- Gemini Config Section -->
+          <div id="geminiConfig" class="space-y-3 p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-300">Google Gemini API Key</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
+                무료 API Key 받기 <i class="ph ph-arrow-square-out"></i>
+              </a>
+            </div>
+            <div class="flex gap-2">
+              <input type="password" id="settingGeminiKey" placeholder="AIzaSy..." 
+                     class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <button type="button" onclick="testAiKey('gemini')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all">
+                연결 테스트
+              </button>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-slate-400">모델:</span>
+              <input type="text" id="settingGeminiModel" value="gemini-3.8-flash" placeholder="gemini-3.8-flash"
+                     class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <span class="text-[11px] text-slate-500">(gemini-3.8-flash, gemini-1.5-flash, gemini-1.5-pro 등)</span>
+            </div>
+          </div>
+
+          <!-- OpenAI Config Section -->
+          <div id="openaiConfig" class="hidden space-y-3 p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-300">OpenAI API Key</label>
+              <a href="https://platform.openai.com/api-keys" target="_blank" class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
+                API Key 발급 <i class="ph ph-arrow-square-out"></i>
+              </a>
+            </div>
+            <div class="flex gap-2">
+              <input type="password" id="settingOpenaiKey" placeholder="sk-..." 
+                     class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <button type="button" onclick="testAiKey('openai')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all">
+                연결 테스트
+              </button>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-slate-400">모델:</span>
+              <input type="text" id="settingOpenaiModel" value="gpt-4o-mini" placeholder="gpt-4o-mini"
+                     class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <span class="text-[11px] text-slate-500">(gpt-4o-mini, gpt-4o 등)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Webhook Card -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="ph-bold ph-bell-ringing text-amber-400"></i> 외부 알림 연동 (선택사항)
+          </h3>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Discord / Slack Webhook URL</label>
+            <input type="url" id="settingWebhookUrl" placeholder="https://discord.com/api/webhooks/... 또는 https://hooks.slack.com/..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+            <p class="text-[11px] text-slate-400 mt-1">24시간 이내 새 영상이 요약되면 위 웹훅으로 카드 알림을 전송합니다.</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all flex items-center gap-2">
+            <i class="ph-bold ph-floppy-disk"></i> 설정 저장 및 스케줄 갱신
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+  </main>
+
+  <!-- SUMMARY DETAIL MODAL -->
+  <div id="summaryModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div class="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col my-auto animate-modalIn">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-start justify-between gap-4 bg-slate-900/80 sticky top-0 z-10 backdrop-blur-md">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span id="modalBadge24h" class="hidden px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              🔥 24시간 이내 신규
+            </span>
+            <span id="modalModelBadge" class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              Gemini
+            </span>
+            <span id="modalChannelContainer"></span>
+            <span id="modalPubTime" class="text-xs text-slate-400">23시간 전</span>
+          </div>
+          <h3 id="modalTitle" class="text-lg font-bold text-white tracking-tight">영상 제목</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copySummaryMarkdown()" title="마크다운 복사" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-copy text-base"></i>
+          </button>
+          <button onclick="downloadSummaryMarkdown()" title="마크다운 다운로드" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-download-simple text-base"></i>
+          </button>
+          <button onclick="deleteCurrentModalVideo()" title="이 동영상 및 요약 리포트 삭제" class="px-2.5 py-1.5 rounded-xl text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 transition-colors flex items-center gap-1 text-xs font-semibold">
+            <i class="ph-bold ph-trash text-sm"></i>
+            <span>삭제</span>
+          </button>
+          <button onclick="closeSummaryModal()" title="닫기" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+            <i class="ph-bold ph-x text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        
+        <!-- Re-summarize Control Toolbar -->
+        <div class="p-3.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/30 border border-blue-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0">
+              <i class="ph-bold ph-magic-wand text-base"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>Gemini 맞춤형 재요약 생성</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-normal bg-purple-500/20 text-purple-300">내 API Key 활용</span>
+              </h4>
+              <p class="text-[11px] text-slate-400">상세도 옵션을 선택하여 원하는 관점으로 다시 분석합니다.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            <select id="modalDetailLevelSelect" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="ultra_detailed" selected>🔍 초정밀 심층 요약 (45초 단위)</option>
+              <option value="standard">📋 표준 핵심 요약 (90초 단위)</option>
+              <option value="brief">⚡ 3분 핵심 브리핑 (초압축)</option>
+            </select>
+            <button id="btnModalResummarize" onclick="resummarizeCurrentModalVideo()" 
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap">
+              <i id="modalResummarizeIcon" class="ph-bold ph-arrows-clockwise"></i>
+              <span id="modalResummarizeText">다시 요약하기</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Video Preview Card -->
+        <div class="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-slate-800/40 border border-slate-800 items-center">
+          <img id="modalThumbnail" src="" alt="Thumbnail" class="w-full sm:w-48 h-28 object-cover rounded-xl border border-slate-700 flex-shrink-0">
+          <div class="flex-1 text-xs space-y-2">
+            <div class="flex items-center gap-4 text-slate-400">
+              <span><i class="ph ph-clock"></i> <span id="modalDuration">12:42</span></span>
+              <span><i class="ph ph-eye"></i> <span id="modalViews">4.9K</span></span>
+              <span><i class="ph ph-calendar"></i> <span id="modalCreatedDate">-</span></span>
+            </div>
+            <p id="modalOneLinerHeader" class="text-slate-200 font-medium leading-relaxed"></p>
+            <div>
+              <a id="modalVideoLink" href="" target="_blank" rel="noopener noreferrer" 
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-500 text-white transition-all">
+                <i class="ph-bold ph-youtube-logo text-sm"></i> 유튜브 원본 영상 시청하기
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rendered Markdown Report -->
+        <div id="modalMarkdownContent" class="prose prose-invert prose-blue max-w-none text-slate-200">
+          <!-- Rendered by marked.js -->
+        </div>
+
+        <!-- Bilingual Subtitle Viewer Collapsible -->
+        <div class="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950/50 shadow-inner">
+          <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 border-b border-slate-800/80">
+            <button onclick="toggleTranscriptView()" class="flex items-center gap-2 text-left group">
+              <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <i class="ph-bold ph-translate text-sm"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white group-hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                  자막 원본 & 한글 번역 이중 표기 (Bilingual Subtitles)
+                  <i id="transcriptToggleIcon" class="ph-bold ph-caret-down text-slate-400 transition-transform"></i>
+                </span>
+                <p class="text-[11px] text-slate-400">영어 원문과 한국어 번역을 타임스탬프와 함께 대조 열람할 수 있습니다.</p>
+              </div>
+            </button>
+
+            <!-- Subtitle Controls (Mode Switch & Copy) -->
+            <div id="transcriptControls" class="hidden flex items-center gap-2">
+              <div class="bg-slate-800 p-0.5 rounded-lg border border-slate-700 flex text-[11px]">
+                <button type="button" onclick="setSubtitleMode('bilingual')" id="subBtn-bilingual" class="px-2 py-1 rounded font-medium bg-blue-600 text-white shadow-sm transition-all">
+                  🌐 이중 표기
+                </button>
+                <button type="button" onclick="setSubtitleMode('ko')" id="subBtn-ko" class="px-2 py-1 rounded font-medium text-slate-400 hover:text-white transition-all">
+                  🇰🇷 한글만
+                </button>
+                <button type="button" onclick="setSubtitleMode('en')" id="subBtn-en" class="px-2 py-1 rounded font-medium text-slate-400 hover:text-white transition-all">
+                  🇺🇸 영문만
+                </button>
+              </div>
+              <button onclick="copyCurrentSubtitles()" title="자막 텍스트 복사" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors text-xs flex items-center gap-1">
+                <i class="ph ph-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Transcript Content Area -->
+          <div id="transcriptContentArea" class="hidden p-4 bg-slate-950/80 max-h-80 overflow-y-auto space-y-3 font-mono text-xs divide-y divide-slate-800/60 selection:bg-blue-600">
+            <!-- Dynamically populated bilingual snippets -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
+        <span class="text-xs text-slate-500">ConstructIQ AI Intelligence Engine</span>
+        <button onclick="closeSummaryModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+          닫기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Multi-Channel Manager Modal -->
+  <div id="channelManagerModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+            <i class="ph-bold ph-television text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">유튜브 다중 채널 등록 및 관리</h3>
+            <p class="text-xs text-slate-400">원하는 유튜브 채널을 추가하여 동일하게 모니터링하고 요약할 수 있습니다.</p>
+          </div>
+        </div>
+        <button onclick="closeChannelManagerModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-6">
+        
+        <!-- Add New Channel Form -->
+        <div class="bg-slate-800/50 border border-slate-700/70 rounded-2xl p-4 space-y-3.5">
+          <h4 class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+            <i class="ph-bold ph-plus-circle"></i> 새 유튜브 채널 등록하기
+          </h4>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-medium text-slate-300 mb-1">유튜브 채널 URL 또는 @핸들 (필수)</label>
+              <input type="text" id="newChannelUrlInput" placeholder="예: https://www.youtube.com/@채널명 또는 @채널명"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-300 mb-1">채널 표시 이름 (선택)</label>
+              <input type="text" id="newChannelNameInput" placeholder="비워두면 자동 인식"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-[11px] text-slate-400">채널별 요약 옵션:</label>
+                <select id="newChannelPromptStyle" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500">
+                  <option value="general">🌐 범용 표준 심층 요약 (일반/교양/다큐)</option>
+                  <option value="construction">🏗️ 건설/엔지니어링 & 적산 특화</option>
+                  <option value="tech">💻 IT / AI / 소프트웨어 기술 특화</option>
+                  <option value="business">📈 비즈니스 / 경제 / 트렌드 인사이트</option>
+                </select>
+              </div>
+              <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer select-none">
+                <input type="checkbox" id="newChannelAutoSync" checked class="rounded bg-slate-900 border-slate-600 text-emerald-500 focus:ring-0">
+                <span>매일 09:00 자동 조사 포함</span>
+              </label>
+            </div>
+
+            <button type="button" id="btnAddChannel" onclick="submitNewChannel()"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center justify-center gap-1.5 transition-all whitespace-nowrap">
+              <i id="btnAddChannelIcon" class="ph-bold ph-plus"></i>
+              <span id="btnAddChannelText">채널 등록 및 영상 동기화</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Registered Channels List -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="ph-bold ph-list-bullets text-blue-400"></i> 등록된 유튜브 채널 목록 (<span id="registeredChannelsCount">1</span>개)
+            </h4>
+            <span class="text-[11px] text-slate-500">채널을 클릭하여 바로 전환하거나 개별 동기화할 수 있습니다.</span>
+          </div>
+
+          <div id="channelManagerList" class="space-y-2.5">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
+        <span class="text-[11px] text-slate-500">💡 기본 채널은 삭제 보호되며, 채널을 삭제해도 이미 작성된 요약 리포트는 영구 보존됩니다.</span>
+        <button onclick="closeChannelManagerModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+          닫기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Single Video Add Modal -->
+  <div id="singleVideoModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden animate-modalIn">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center border border-blue-500/30">
+            <i class="ph-bold ph-video text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">개별 유튜브 동영상 URL 직접 등록</h3>
+            <p class="text-xs text-slate-400">원하는 유튜브 영상 링크를 입력하여 목록에 추가하고 즉시 AI 요약 리포트를 생성합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeSingleVideoModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="singleVideoForm" onsubmit="submitSingleVideo(event, true)" class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">유튜브 동영상 링크 (URL) 또는 비디오 ID <span class="text-red-400">*</span></label>
+          <div class="relative">
+            <i class="ph-bold ph-link absolute left-3 top-3 text-slate-400 text-sm"></i>
+            <input type="text" id="singleVideoUrl" required placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+                   class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all font-mono">
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">일반 영상, 쇼츠(Shorts), 모바일 단축 링크(youtu.be) 모두 지원합니다.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">소속 채널</label>
+            <select id="singleVideoChannelId" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="">자동 감지 (실제 영상 채널명)</option>
+              <!-- Populated dynamically with registered channels -->
+            </select>
+            <p class="text-[10px] text-slate-400 mt-1">💡 등록 후에도 영상 목록에서 클릭하여 언제든 채널을 바꿀 수 있습니다.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">AI 요약 스타일</label>
+            <select id="singleVideoPromptStyle" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="construction">🏗️ 건설/엔지니어링 & 적산</option>
+              <option value="tech">💻 IT / AI / 소프트웨어 기술</option>
+              <option value="business">📈 비즈니스 / 경제 / 트렌드</option>
+              <option value="general">🌐 범용 표준 심층 요약</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-300">분류 카테고리 (직접 등록 영상 분류)</label>
+            <button type="button" onclick="quickAddCategoryFromSingleModal()" class="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition-colors">
+              <i class="ph-bold ph-plus-circle"></i> 새 분류 추가
+            </button>
+          </div>
+          <select id="singleVideoCustomCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            <option value="">📁 미분류 (선택 안 함)</option>
+            <!-- Populated dynamically with custom categories -->
+          </select>
+        </div>
+
+        <div id="singleVideoStatusMsg" class="hidden p-3 rounded-xl text-xs"></div>
+
+        <!-- Modal Actions -->
+        <div class="pt-2 flex flex-wrap items-center justify-end gap-2">
+          <button type="button" onclick="closeSingleVideoModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+            취소
+          </button>
+          <button type="button" id="btnSubmitSingleVideoOnly" onclick="submitSingleVideo(event, false)" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-100 border border-slate-600 flex items-center gap-1.5 transition-all shadow-sm">
+            <i id="btnSubmitSingleVideoOnlyIcon" class="ph-bold ph-bookmark-simple text-sm"></i>
+            <span id="btnSubmitSingleVideoOnlyText">동영상 등록만</span>
+          </button>
+          <button type="submit" id="btnSubmitSingleVideo" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 transition-all shadow-sm">
+            <i id="btnSubmitSingleVideoIcon" class="ph-bold ph-plus-circle text-sm"></i>
+            <span id="btnSubmitSingleVideoText">동영상 등록 및 요약 시작</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Video Channel Change Modal -->
+  <div id="changeChannelModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden animate-modalIn">
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+            <i class="ph-bold ph-television text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">소속 채널 변경</h3>
+            <p class="text-xs text-slate-400">동영상이 속한 채널을 다른 채널로 이동합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeChangeChannelModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form onsubmit="submitChangeChannel(event)" class="p-5 space-y-4">
+        <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
+          <img id="changeChannelVideoThumb" src="" alt="Thumbnail" class="w-16 h-10 object-cover rounded-lg bg-slate-950 flex-shrink-0">
+          <div class="min-w-0 flex-1">
+            <h4 id="changeChannelVideoTitle" class="text-xs font-bold text-white truncate">영상 제목</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">현재 소속: <span id="changeChannelCurrentName" class="text-indigo-300 font-semibold">채널명</span></p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">이동할 소속 채널 선택</label>
+          <select id="changeChannelTargetSelect" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <!-- Populated dynamically with registered channels -->
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1.5">💡 변경 즉시 해당 채널 탭 및 요약 목록에 자동 반영됩니다.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeChangeChannelModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+            취소
+          </button>
+          <button type="submit" id="btnSubmitChangeChannel" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 transition-all shadow-sm">
+            <i class="ph-bold ph-check text-sm"></i>
+            <span>채널 변경 저장</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Category Manager Modal -->
+  <div id="customCategoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden animate-modalIn">
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center border border-amber-500/30">
+            <i class="ph-bold ph-folders text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">직접 등록 영상 분류(카테고리) 관리</h3>
+            <p class="text-xs text-slate-400">원하는 카테고리를 자유롭게 추가·이름변경·삭제할 수 있습니다.</p>
+          </div>
+        </div>
+        <button onclick="closeCustomCategoryModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
+        <!-- Add New Category Form -->
+        <form onsubmit="submitNewCustomCategory(event)" class="bg-slate-800/60 border border-slate-700/70 rounded-2xl p-3.5 space-y-2.5">
+          <label class="block text-xs font-semibold text-slate-300">새 분류 카테고리 추가</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="newCustomCategoryInput" placeholder="예: AI / CAD, 토목 / 검사, 업무참고 등"
+                   class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all">
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1.5 transition-all whitespace-nowrap shadow-sm">
+              <i class="ph-bold ph-plus-circle text-sm"></i>
+              <span>추가</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Existing Categories List -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-300">등록된 분류 목록 (<span id="customCategoryCount">0</span>개)</h4>
+            <span class="text-[11px] text-slate-500">삭제 시 해당 영상은 '미분류'로 전환됩니다</span>
+          </div>
+          <div id="customCategoryManagerList" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+        <button type="button" onclick="closeCustomCategoryModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Video / Summary Confirmation Modal (2-Step) -->
+  <div id="deleteConfirmModal" class="hidden fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden animate-modalIn">
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center border border-red-500/30">
+            <i class="ph-bold ph-trash text-lg"></i>
+          </div>
+          <div>
+            <h3 id="deleteModalHeaderTitle" class="text-base font-bold text-white">삭제 방식 선택</h3>
+            <p id="deleteModalHeaderSub" class="text-xs text-slate-400">원하시는 삭제 범위를 선택해주세요.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDeleteConfirmModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-4">
+        <div class="p-3 rounded-xl bg-slate-800/70 border border-slate-700/70">
+          <div class="text-[10px] font-semibold text-slate-400 mb-0.5">선택된 동영상</div>
+          <div id="deleteModalVideoTitle" class="text-xs font-bold text-white line-clamp-2">영상 제목</div>
+        </div>
+
+        <!-- Step 1: Choose Delete Mode -->
+        <div id="deleteModalStep1" class="space-y-2.5">
+          <button type="button" id="btnDeleteOptionSummaryOnly" onclick="selectDeleteOption('summary_only')"
+                  class="w-full p-3.5 rounded-2xl bg-amber-950/30 hover:bg-amber-900/40 border border-amber-500/40 hover:border-amber-400 text-left transition-all flex items-start gap-3 group">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="ph-bold ph-file-dashed text-base"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-amber-300 group-hover:text-amber-200 flex items-center justify-between">
+                <span>요약 리포트만 삭제 (목록 유지)</span>
+                <i class="ph-bold ph-caret-right text-xs"></i>
+              </div>
+              <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                AI 요약 리포트만 삭제하고, 동영상은 <strong>미요약 상태</strong>로 목록에 그대로 남겨둡니다.
+              </p>
+            </div>
+          </button>
+
+          <button type="button" id="btnDeleteOptionFull" onclick="selectDeleteOption('full')"
+                  class="w-full p-3.5 rounded-2xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/40 hover:border-red-400 text-left transition-all flex items-start gap-3 group">
+            <div class="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="ph-bold ph-trash text-base"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div id="deleteOptionFullTitle" class="text-xs font-bold text-red-300 group-hover:text-red-200 flex items-center justify-between">
+                <span>목록도 같이 삭제 (전체 영구 삭제)</span>
+                <i class="ph-bold ph-caret-right text-xs"></i>
+              </div>
+              <p id="deleteOptionFullDesc" class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                동영상 목록과 생성된 AI 요약 리포트를 모두 영구적으로 삭제합니다.
+              </p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Step 2: Second Confirmation ("한 번 더 물어보기") -->
+        <div id="deleteModalStep2" class="hidden space-y-3">
+          <div id="deleteStep2WarningBox" class="p-3.5 rounded-2xl bg-red-950/40 border border-red-500/40 text-xs space-y-1.5">
+            <div class="font-bold text-red-300 flex items-center gap-1.5">
+              <i class="ph-bold ph-warning-circle text-sm"></i>
+              <span id="deleteStep2ActionLabel">정말로 삭제하시겠습니까?</span>
+            </div>
+            <p id="deleteStep2ActionDesc" class="text-[11px] text-slate-300 leading-relaxed">
+              삭제된 데이터는 복구할 수 없습니다. 계속 진행하시려면 아래 [최종 삭제 실행] 버튼을 눌러주세요.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button type="button" onclick="backToDeleteStep1()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all">
+              이전으로
+            </button>
+            <button type="button" id="btnConfirmFinalDelete" onclick="executeConfirmedDelete()"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition-all">
+              <i class="ph-bold ph-trash text-sm"></i>
+              <span id="btnConfirmFinalDeleteText">최종 삭제 실행</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div id="deleteModalFooter" class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+        <button type="button" onclick="closeDeleteConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-all">
+          취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/app.js?v=20261022_0200"></script>
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>배포용 패키지(Youtube_AI_Digest_Package.zip) 구축 계획서</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --inline-code-bg: #f1f5f9;
+      --inline-code-text: #d946ef;
+      --table-header-bg: #f1f5f9;
+      --table-alt-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    .dark {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #1f2937;
+      --primary: #60a5fa;
+      --primary-hover: #3b82f6;
+      --primary-light: rgba(59, 130, 246, 0.12);
+      --code-bg: #030712;
+      --code-text: #e5e7eb;
+      --inline-code-bg: #1f2937;
+      --inline-code-text: #f472b6;
+      --table-header-bg: #1e293b;
+      --table-alt-bg: #131b2e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.75;
+      padding: 24px 16px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Sticky Action Bar */
+    .action-bar {
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      max-width: 980px;
+      margin: 0 auto 24px auto;
+      padding: 10px 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+    }
+
+    .action-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .action-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .action-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--border-color);
+      border-color: var(--text-muted);
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 44px 48px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Headings */
+    h1.doc-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 24px;
+      color: var(--text-color);
+      line-height: 1.35;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    h2.section-heading {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      color: var(--text-color);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .heading-anchor {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.1rem;
+      opacity: 0.6;
+    }
+
+    h3.sub-heading {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: 26px;
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+
+    h4.sub-sub-heading {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    /* Typography */
+    p.paragraph {
+      margin-bottom: 14px;
+      color: var(--text-color);
+      font-size: 0.96rem;
+      word-break: keep-all;
+    }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 32px 0;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    /* Inline Code */
+    code.inline-code {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.85em;
+      background-color: var(--inline-code-bg);
+      color: var(--inline-code-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      font-weight: 500;
+    }
+
+    /* Code Blocks */
+    .code-block-wrapper {
+      margin: 18px 0;
+      background-color: var(--code-bg);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+
+    .code-lang {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.05em;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      color: var(--code-text);
+    }
+
+    pre code {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    /* ========================================================
+       ENLARGED & FULL-WIDTH MERMAID DIAGRAMS
+       ======================================================== */
+    .mermaid-card {
+      margin: 28px 0;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+    }
+
+    .mermaid-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.02);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .dark .mermaid-header {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .mermaid-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .mermaid-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-diag-ctrl {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-diag-ctrl:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .mermaid-container {
+      padding: 24px 18px;
+      overflow-x: auto;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+    }
+
+    .mermaid {
+      width: 100% !important;
+      display: block !important;
+      text-align: center;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* FORCE FULL WIDTH & SCALED GRAPHICS */
+    .mermaid svg {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      min-height: 260px;
+      display: block !important;
+      margin: 0 auto;
+    }
+
+    /* Make text inside nodes bold and clear */
+    .mermaid .node text,
+    .mermaid .label text,
+    .mermaid text {
+      font-family: 'Pretendard', sans-serif !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+    }
+
+    .mermaid .cluster-label text,
+    .mermaid .cluster text {
+      font-family: 'Pretendard', sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+    }
+
+    /* Expanded View Mode (130% zoom with smooth horizontal scroll) */
+    .mermaid-card.expanded {
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+
+    .mermaid-card.expanded .mermaid-container {
+      overflow-x: scroll;
+      padding: 32px 24px;
+    }
+
+    .mermaid-card.expanded .mermaid svg {
+      min-width: 1100px !important;
+      width: 130% !important;
+      max-width: none !important;
+    }
+
+    /* Fullscreen Modal */
+    .diag-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .diag-modal-overlay.active {
+      display: flex;
+    }
+
+    .diag-modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 95vw;
+      max-height: 92vh;
+      width: 1300px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+
+    .diag-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-color);
+    }
+
+    .diag-modal-body {
+      padding: 30px;
+      overflow: auto;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .diag-modal-body svg {
+      width: 100% !important;
+      max-width: 1200px !important;
+      height: auto !important;
+    }
+
+    /* Callouts / Alerts */
+    .callout {
+      margin: 20px 0;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      border-left: 4px solid;
+    }
+
+    .callout-note {
+      background: rgba(59, 130, 246, 0.08);
+      border-left-color: #3b82f6;
+    }
+
+    .callout-tip {
+      background: rgba(16, 185, 129, 0.08);
+      border-left-color: #10b981;
+    }
+
+    .callout-important {
+      background: rgba(168, 85, 247, 0.08);
+      border-left-color: #a855f7;
+    }
+
+    .callout-warning {
+      background: rgba(245, 158, 11, 0.08);
+      border-left-color: #f59e0b;
+    }
+
+    .callout-caution {
+      background: rgba(239, 68, 68, 0.08);
+      border-left-color: #ef4444;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .callout-note .callout-header { color: #2563eb; }
+    .callout-tip .callout-header { color: #059669; }
+    .callout-important .callout-header { color: #9333ea; }
+    .callout-warning .callout-header { color: #d97706; }
+    .callout-caution .callout-header { color: #dc2626; }
+
+    .dark .callout-note .callout-header { color: #60a5fa; }
+    .dark .callout-tip .callout-header { color: #34d399; }
+    .dark .callout-important .callout-header { color: #c084fc; }
+    .dark .callout-warning .callout-header { color: #fbbf24; }
+    .dark .callout-caution .callout-header { color: #f87171; }
+
+    .callout-content p {
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+    }
+
+    .callout-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Tables */
+    .table-container {
+      margin: 24px 0;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--table-header-bg);
+      color: var(--text-color);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+      vertical-align: middle;
+    }
+
+    tr:nth-child(even) td {
+      background-color: var(--table-alt-bg);
+    }
+
+    tr:hover td {
+      background-color: var(--primary-light);
+    }
+
+    /* Lists */
+    ol.custom-list, ul.custom-list {
+      margin: 14px 0 18px 22px;
+      font-size: 0.95rem;
+    }
+
+    ol.custom-list > li, ul.custom-list > li {
+      margin-bottom: 10px;
+      padding-left: 4px;
+      word-break: keep-all;
+    }
+
+    ul.sub-list {
+      margin: 8px 0 8px 20px;
+      list-style-type: circle;
+    }
+
+    ul.sub-list > li {
+      margin-bottom: 6px;
+      color: var(--text-color);
+    }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .action-bar, .mermaid-actions {
+        display: none !important;
+      }
+      .main-container {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .mermaid-card {
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+      }
+      .code-block-wrapper {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+      }
+      .table-container {
+        box-shadow: none !important;
+      }
+      h2.section-heading {
+        page-break-before: auto;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 24px 16px;
+      }
+      h1.doc-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Action Bar -->
+  <div class="action-bar">
+    <div class="action-bar-left">
+      <span class="action-badge">HTML Document</span>
+      <span>배포용 패키지(Youtube_AI_Digest_Package.zip) 구축 계획서</span>
+    </div>
+    <div class="action-bar-right">
+      <button class="btn-action" onclick="toggleTheme()" title="화면 테마 변경">🌓 테마 전환</button>
+      <button class="btn-action" onclick="window.print()" title="문서 인쇄 또는 PDF로 저장">🖨️ 인쇄 / PDF 저장</button>
+      <button class="btn-action" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="맨 위로 이동">⬆️ 상단</button>
+    </div>
+  </div>
+
+  <!-- Document Card -->
+  <div class="main-container">
+    <h1 class="doc-title">📦 배포용 패키지(Youtube_AI_Digest_Package.zip)</h1>
+<hr class="divider" />
+<h2 id="1__아키텍처_및_패키징_파이프라인" class="section-heading"><span class="heading-anchor">#</span>1. 아키텍처 및 패키징 파이프라인</h2>
+<div class="mermaid-card" id="diagram_1_card">  <div class="mermaid-header">    <div class="mermaid-title-wrap">      <span class="mermaid-icon">📊</span>      <span class="mermaid-title">시스템 흐름도 & 아키텍처 다이어그램</span>    </div>    <div class="mermaid-actions">      <button class="btn-diag-ctrl" onclick="toggleDiagramExpand('diagram_1')" title="가로폭 100% 확대 / 축소">🔍 폭 맞춤 확대</button>      <button class="btn-diag-ctrl" onclick="openDiagramModal('diagram_1')" title="전체화면으로 크게 보기">⛶ 전체 화면</button>    </div>  </div>  <div class="mermaid-container" id="diagram_1_container">    <pre class="mermaid" id="diagram_1">
+flowchart TD
+    subgraph Original["운영 원본 소스 (Tim_Fairley)"]
+        OrigCode["app.py / frontend / backend"]
+        OrigDB[("운영 DB (app.sqlite)")]
+        OrigCache["__pycache__ / .venv / My_Daily"]
+    end
+
+    subgraph Staging["격리된 임시 스테이징 환경 (%TEMP%)"]
+        CopyCode["핵심 소스 복사 (캐시/가상환경 배제)"]
+        ModUI["UI 기본값 설정\n(selectedChannelId = 'all')"]
+        ModApp["안전 가드 추가 (채널 0개 시 방어)"]
+        CleanDB[("신규 배포용 DB")]
+        AddHelpers["install.bat & requirements.txt 추가"]
+        CleanViewer["초기 offline_viewer.html 생성"]
+    end
+
+    subgraph Distribution["최종 배포용 패키지 (103 KB)"]
+        ZipFile["Youtube_AI_Digest_Package.zip\n(핵심 20개 파일 완전 자립형)"]
+    end
+
+    OrigCode -->|읽기 전용 복사| CopyCode
+    OrigDB -.->|참조 차단| Staging
+    OrigCache -.->|제외 필터| Staging
+
+    CopyCode --> ModUI & ModApp
+    ModUI & ModApp & CleanDB & AddHelpers & CleanViewer --> ZipFile
+</pre>  </div></div>
+<hr class="divider" />
+<h2 id="2__세부_구현_단계__Implementation_Phases" class="section-heading"><span class="heading-anchor">#</span>2. 세부 구현 단계 (Implementation Phases)</h2>
+<h3 id="Phase_1__원본_소스_무결성_보존_및_스테이징_격리" class="sub-heading">Phase 1. 원본 소스 무결성 보존 및 스테이징 격리</h3>
+<div class="callout callout-important">  <div class="callout-header">    <span class="callout-icon">⚡</span>    <span class="callout-title">중요 (Important)</span>  </div>  <div class="callout-content"><p>로컬에서 실행 중인 웹 서버(포트 8070)와 운영 데이터(채널, 영상, 요약, 개인 API 키)는 <strong>단 1바이트도 수정하지 않고 읽기 전용으로만 접근</strong>하여 100% 안전성을 보장합니다.</p></div></div>
+<ol class="custom-list"><li><strong>임시 스테이징 디렉토리 분리</strong>:<ul class="sub-list"><li>윈도우 임시 디렉토리(<code class="inline-code">%TEMP%\Youtube_AI_Digest_Package</code>)에 전용 빌드 공간을 생성하고 모든 변환 작업을 독립적으로 수행.</li></ul></li><li><strong>불필요한 대용량/개인 파일 제외 복사</strong>:<ul class="sub-list"><li>제외 대상: <code class="inline-code">.venv/</code>(가상환경), <code class="inline-code">__pycache__/</code> 및 <code class="inline-code">*.pyc</code>(바이트코드 캐시), <code class="inline-code">My_Daily/</code>(개인 엑셀/마크다운 파일), <code class="inline-code">test_crlf.bat</code>, <code class="inline-code">database.db</code>(0바이트 파일).</li><li>필수 복사 대상: <code class="inline-code">app.py</code>, <code class="inline-code">run.bat</code>, <code class="inline-code">stop.bat</code>, <code class="inline-code">run.sh</code>, <code class="inline-code">README.md</code>, <code class="inline-code">open_offline_viewer.bat</code>, <code class="inline-code">export_offline_viewer.bat</code>, <code class="inline-code">frontend/</code>, <code class="inline-code">backend/</code>.</li></ul></li></ol>
+<hr class="divider" />
+<h3 id="Phase_2____전체_채널___기본_활성화_및_채널_바_개편" class="sub-heading">Phase 2. <code class="inline-code">[전체 채널]</code> 기본 활성화 및 채널 바 개편</h3>
+<ol class="custom-list"><li><strong><code class="inline-code">frontend/app.js</code> 기본 채널 선택값 변경</strong>:<ul class="sub-list"><li><code class="inline-code">let selectedChannelId = 1;</code> → <strong><code class="inline-code">let selectedChannelId = &#x27;all&#x27;;</code></strong>로 변경하여, 첫 방문 시 항상 등록된 전체 채널을 취합하는 화면으로 열리도록 설정.</li></ul></li><li><strong>채널 선택 바(<code class="inline-code">renderChannelSelectorBar</code>) 구조 개선</strong>:<ul class="sub-list"><li>채널 선택 바의 가장 첫 번째 항목으로 <strong><code class="inline-code">[전체 채널]</code></strong> 버튼을 고정 배치.</li><li>등록된 채널이 0개인 초기 상태에서도 <code class="inline-code">[전체 채널 (0)]</code> 버튼과 함께 직관적인 <strong><code class="inline-code">[+ 채널 추가]</code></strong> 버튼이 즉시 노출되도록 개선.</li></ul></li><li><strong>헤더 안내 문구(<code class="inline-code">updateHeaderForChannel</code>) 범용화</strong>:<ul class="sub-list"><li>채널이 0개일 때: <code class="inline-code">&quot;등록된 유튜브 채널이 없습니다. [채널 관리]에서 채널을 등록해 주세요.&quot;</code></li><li>채널이 등록되었을 때: <code class="inline-code">&quot;등록된 전체 유튜브 채널 (N개) 24시간 신규 영상 통합 리포트&quot;</code></li><li><code class="inline-code">frontend/index.html</code> 내 고정 텍스트를 범용 문구로 일괄 정비.</li></ul></li></ol>
+<hr class="divider" />
+<h3 id="Phase_3__패키지_배포_편의성_극대화__원클릭_환경_제공" class="sub-heading">Phase 3. 패키지 배포 편의성 극대화 (원클릭 환경 제공)</h3>
+<ol class="custom-list"><li><strong>의존성 명세서 (<code class="inline-code">requirements.txt</code>) 생성</strong>:<ul class="sub-list"><li>앱 구동에 필요한 6개 핵심 파이썬 패키지를 정확히 명시: ``<code class="inline-code">text fastapi&gt;=0.100.0 uvicorn[standard]&gt;=0.22.0 pydantic&gt;=2.0.0 requests&gt;=2.31.0 apscheduler&gt;=3.10.0 youtube-transcript-api&gt;=0.6.1 </code>``</li></ul></li><li><strong>원클릭 인스톨러 (<code class="inline-code">install.bat</code>) 동봉</strong>:<ul class="sub-list"><li>파이썬을 잘 모르는 다른 사용자도 더블클릭 한 번으로 <code class="inline-code">pip install -r requirements.txt</code>를 실행할 수 있도록 배치 파일 작성.</li></ul></li><li><strong>클린 오프라인 뷰어 (<code class="inline-code">offline_viewer.html</code>) 리셋</strong>:<ul class="sub-list"><li>0건의 요약 상태를 갖는 초기 템플릿(약 39KB)으로 재구성하여 동봉.</li></ul></li></ol>
+<hr class="divider" />
+<h3 id="Phase_4__패키지_파일_구성_및_검증_결과" class="sub-heading">Phase 4. 패키지 파일 구성 및 검증 결과</h3>
+<p class="paragraph">최종 생성된 <code class="inline-code">Youtube_AI_Digest_Package.zip</code> (약 <strong>103 KB</strong>) 내부의 파일 구조입니다:</p>
+<div class="table-container"><table><thead><tr><th style="text-align: left;">구분</th><th style="text-align: left;">파일명</th><th style="text-align: center;">크기</th><th style="text-align: left;">설명</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>실행 스크립트</strong></td><td style="text-align: left;"><code class="inline-code">run.bat</code></td><td style="text-align: center;">1.7 KB</td><td style="text-align: left;">포트 충돌 자동 회피 및 서버/브라우저 원클릭 가동</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">stop.bat</code></td><td style="text-align: center;">0.8 KB</td><td style="text-align: left;">백그라운드 서버 프로세스 일괄 안전 종료</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">install.bat</code></td><td style="text-align: center;">0.6 KB</td><td style="text-align: left;">필수 라이브러리 자동 설치 배치 파일</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">run.sh</code></td><td style="text-align: center;">0.3 KB</td><td style="text-align: left;">Linux/macOS 환경 실행 스크립트</td></tr><tr><td style="text-align: left;"><strong>의존성/문서</strong></td><td style="text-align: left;"><code class="inline-code">requirements.txt</code></td><td style="text-align: center;">0.1 KB</td><td style="text-align: left;">필수 파이썬 라이브러리 목록</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">README.md</code></td><td style="text-align: center;">6.5 KB</td><td style="text-align: left;">프로젝트 기능 및 기본 안내 문서</td></tr><tr><td style="text-align: left;"><strong>메인 백엔드</strong></td><td style="text-align: left;"><code class="inline-code">app.py</code></td><td style="text-align: center;">29.6 KB</td><td style="text-align: left;">FastAPI 메인 서버, 스케줄러 및 REST API</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/database.py</code></td><td style="text-align: center;">35.9 KB</td><td style="text-align: left;">SQLite DB ORM (클린 스키마 적용)</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/youtube_scraper.py</code></td><td style="text-align: center;">19.9 KB</td><td style="text-align: left;">유튜브 메타데이터 및 다국어 자막 크롤러</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/ai_summarizer.py</code></td><td style="text-align: center;">29.1 KB</td><td style="text-align: left;">Gemini 3.8 / OpenAI 3단계 초정밀 심층 요약 엔진</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/scheduler.py</code></td><td style="text-align: center;">9.6 KB</td><td style="text-align: left;">매일 09:00 자동 조사 스케줄러</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/offline_exporter.py</code></td><td style="text-align: center;">41.1 KB</td><td style="text-align: left;">단독 실행형 HTML 오프라인 리포트 내보내기 엔진</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">backend/notification.py</code></td><td style="text-align: center;">2.1 KB</td><td style="text-align: left;">웹훅 알림 디스패처</td></tr><tr><td style="text-align: left;"><strong>데이터베이스</strong></td><td style="text-align: left;"><code class="inline-code">data/app.sqlite</code></td><td style="text-align: center;">61.4 KB</td><td style="text-align: left;"><strong>초기화 완료 DB</strong> (API키 0개, 채널 0개, 영상 0개)</td></tr><tr><td style="text-align: left;"><strong>웹 프론트엔드</strong></td><td style="text-align: left;"><code class="inline-code">frontend/index.html</code></td><td style="text-align: center;">77.6 KB</td><td style="text-align: left;">반응형 대시보드 UI (Pretendard & Tailwind)</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">frontend/app.js</code></td><td style="text-align: center;">127.2 KB</td><td style="text-align: left;">대시보드 로직 (<code class="inline-code">selectedChannelId = &#x27;all&#x27;</code> 기본)</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">frontend/style.css</code></td><td style="text-align: center;">2.3 KB</td><td style="text-align: left;">다크 슬레이트 테마 커스텀 스타일</td></tr><tr><td style="text-align: left;"><strong>오프라인 뷰어</strong></td><td style="text-align: left;"><code class="inline-code">offline_viewer.html</code></td><td style="text-align: center;">39.4 KB</td><td style="text-align: left;">서버 없이 즉시 열람 가능한 초기형 리포트 뷰어</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">open_offline_viewer.bat</code></td><td style="text-align: center;">0.4 KB</td><td style="text-align: left;">오프라인 뷰어 원클릭 열기 스크립트</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;"><code class="inline-code">export_offline_viewer.bat</code></td><td style="text-align: center;">0.4 KB</td><td style="text-align: left;">오프라인 뷰어 갱신 내보내기 스크립트</td></tr></tbody></table></div>
+<hr class="divider" />
+<h2 id="3__배포_파일_안내" class="section-heading"><span class="heading-anchor">#</span>3. 배포 파일 안내</h2>
+<ul class="custom-list"><li><code class="inline-code">Youtube_AI_Digest_Package.zip</code></li></ul>
+    
+    <div class="doc-footer">
+      <span>Youtube AI Digest System Documentation</span>
+      <span>Generated for standalone web viewing</span>
+    </div>
+  </div>
+
+  <!-- Modal for Fullscreen Diagram -->
+  <div class="diag-modal-overlay" id="diagModal" onclick="closeDiagramModal(event)">
+    <div class="diag-modal-content" onclick="event.stopPropagation()">
+      <div class="diag-modal-header">
+        <strong id="modalDiagTitle">📊 다이어그램 전체화면 보기</strong>
+        <button class="btn-diag-ctrl" onclick="closeDiagramModal()">✕ 닫기 (ESC)</button>
+      </div>
+      <div class="diag-modal-body" id="modalDiagBody">
+        <!-- SVG will be cloned here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mermaid.js for Diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    const isDark = document.documentElement.classList.contains('dark') || 
+                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      fontFamily: 'Pretendard, -apple-system, sans-serif',
+      themeVariables: {
+        fontSize: '15px',
+        fontFamily: 'Pretendard, -apple-system, sans-serif'
+      },
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis',
+        nodeSpacing: 45,
+        rankSpacing: 45
+      }
+    });
+
+    // After mermaid renders, enhance SVGs to fill 100% width and scale cleanly
+    setTimeout(() => {
+      document.querySelectorAll('.mermaid svg').forEach(svg => {
+        svg.removeAttribute('height'); // allow height to scale proportionally with width
+        svg.style.width = '100%';
+        svg.style.maxWidth = '100%';
+        svg.style.height = 'auto';
+      });
+    }, 400);
+  </script>
+
+  <script>
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      htmlEl.classList.toggle('dark');
+      const isDark = htmlEl.classList.contains('dark');
+      localStorage.setItem('doc-theme', isDark ? 'dark' : 'light');
+    }
+
+    (function() {
+      const savedTheme = localStorage.getItem('doc-theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+
+    function copyCode(btn) {
+      const codeBlock = btn.closest('.code-block-wrapper').querySelector('code');
+      if (codeBlock) {
+        navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+          const orig = btn.innerText;
+          btn.innerText = '✅ 복사됨!';
+          setTimeout(() => {
+            btn.innerText = orig;
+          }, 1800);
+        }).catch(err => {
+          console.error('Failed to copy', err);
+        });
+      }
+    }
+
+    function toggleDiagramExpand(diagId) {
+      const card = document.getElementById(diagId + '_card');
+      if (card) {
+        card.classList.toggle('expanded');
+        const btn = card.querySelector('.btn-diag-ctrl');
+        if (btn) {
+          btn.innerText = card.classList.contains('expanded') ? '🔍 기본 폭으로' : '🔍 폭 맞춤 확대';
+        }
+      }
+    }
+
+    function openDiagramModal(diagId) {
+      const container = document.getElementById(diagId + '_container');
+      const modal = document.getElementById('diagModal');
+      const modalBody = document.getElementById('modalDiagBody');
+      if (container && modal && modalBody) {
+        const svg = container.querySelector('svg');
+        if (svg) {
+          modalBody.innerHTML = svg.outerHTML;
+          modal.classList.add('active');
+        }
+      }
+    }
+
+    function closeDiagramModal(event) {
+      const modal = document.getElementById('diagModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDiagramModal();
+      }
+    });
+  </script>
+</body>
+</html>

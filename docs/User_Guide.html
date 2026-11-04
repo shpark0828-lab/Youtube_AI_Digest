@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youtube AI Digest 사용자 가이드 (User Guide)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --inline-code-bg: #f1f5f9;
+      --inline-code-text: #d946ef;
+      --table-header-bg: #f1f5f9;
+      --table-alt-bg: #f8fafc;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    .dark {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #1f2937;
+      --primary: #60a5fa;
+      --primary-hover: #3b82f6;
+      --primary-light: rgba(59, 130, 246, 0.12);
+      --code-bg: #030712;
+      --code-text: #e5e7eb;
+      --inline-code-bg: #1f2937;
+      --inline-code-text: #f472b6;
+      --table-header-bg: #1e293b;
+      --table-alt-bg: #131b2e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.75;
+      padding: 24px 16px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Sticky Action Bar */
+    .action-bar {
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      max-width: 980px;
+      margin: 0 auto 24px auto;
+      padding: 10px 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+    }
+
+    .action-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .action-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .action-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--border-color);
+      border-color: var(--text-muted);
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 44px 48px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Headings */
+    h1.doc-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 24px;
+      color: var(--text-color);
+      line-height: 1.35;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    h2.section-heading {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      color: var(--text-color);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .heading-anchor {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.1rem;
+      opacity: 0.6;
+    }
+
+    h3.sub-heading {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: 26px;
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+
+    h4.sub-sub-heading {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    /* Typography */
+    p.paragraph {
+      margin-bottom: 14px;
+      color: var(--text-color);
+      font-size: 0.96rem;
+      word-break: keep-all;
+    }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 32px 0;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    /* Inline Code */
+    code.inline-code {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.85em;
+      background-color: var(--inline-code-bg);
+      color: var(--inline-code-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      font-weight: 500;
+    }
+
+    /* Code Blocks */
+    .code-block-wrapper {
+      margin: 18px 0;
+      background-color: var(--code-bg);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+
+    .code-lang {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.05em;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      color: var(--code-text);
+    }
+
+    pre code {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    /* ========================================================
+       ENLARGED & FULL-WIDTH MERMAID DIAGRAMS
+       ======================================================== */
+    .mermaid-card {
+      margin: 28px 0;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+    }
+
+    .mermaid-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.02);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .dark .mermaid-header {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .mermaid-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .mermaid-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-diag-ctrl {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-diag-ctrl:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .mermaid-container {
+      padding: 24px 18px;
+      overflow-x: auto;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+    }
+
+    .mermaid {
+      width: 100% !important;
+      display: block !important;
+      text-align: center;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* FORCE FULL WIDTH & SCALED GRAPHICS */
+    .mermaid svg {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      min-height: 260px;
+      display: block !important;
+      margin: 0 auto;
+    }
+
+    /* Make text inside nodes bold and clear */
+    .mermaid .node text,
+    .mermaid .label text,
+    .mermaid text {
+      font-family: 'Pretendard', sans-serif !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+    }
+
+    .mermaid .cluster-label text,
+    .mermaid .cluster text {
+      font-family: 'Pretendard', sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+    }
+
+    /* Expanded View Mode (130% zoom with smooth horizontal scroll) */
+    .mermaid-card.expanded {
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+
+    .mermaid-card.expanded .mermaid-container {
+      overflow-x: scroll;
+      padding: 32px 24px;
+    }
+
+    .mermaid-card.expanded .mermaid svg {
+      min-width: 1100px !important;
+      width: 130% !important;
+      max-width: none !important;
+    }
+
+    /* Fullscreen Modal */
+    .diag-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .diag-modal-overlay.active {
+      display: flex;
+    }
+
+    .diag-modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 95vw;
+      max-height: 92vh;
+      width: 1300px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+
+    .diag-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-color);
+    }
+
+    .diag-modal-body {
+      padding: 30px;
+      overflow: auto;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .diag-modal-body svg {
+      width: 100% !important;
+      max-width: 1200px !important;
+      height: auto !important;
+    }
+
+    /* Callouts / Alerts */
+    .callout {
+      margin: 20px 0;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      border-left: 4px solid;
+    }
+
+    .callout-note {
+      background: rgba(59, 130, 246, 0.08);
+      border-left-color: #3b82f6;
+    }
+
+    .callout-tip {
+      background: rgba(16, 185, 129, 0.08);
+      border-left-color: #10b981;
+    }
+
+    .callout-important {
+      background: rgba(168, 85, 247, 0.08);
+      border-left-color: #a855f7;
+    }
+
+    .callout-warning {
+      background: rgba(245, 158, 11, 0.08);
+      border-left-color: #f59e0b;
+    }
+
+    .callout-caution {
+      background: rgba(239, 68, 68, 0.08);
+      border-left-color: #ef4444;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .callout-note .callout-header { color: #2563eb; }
+    .callout-tip .callout-header { color: #059669; }
+    .callout-important .callout-header { color: #9333ea; }
+    .callout-warning .callout-header { color: #d97706; }
+    .callout-caution .callout-header { color: #dc2626; }
+
+    .dark .callout-note .callout-header { color: #60a5fa; }
+    .dark .callout-tip .callout-header { color: #34d399; }
+    .dark .callout-important .callout-header { color: #c084fc; }
+    .dark .callout-warning .callout-header { color: #fbbf24; }
+    .dark .callout-caution .callout-header { color: #f87171; }
+
+    .callout-content p {
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+    }
+
+    .callout-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Tables */
+    .table-container {
+      margin: 24px 0;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--table-header-bg);
+      color: var(--text-color);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+      vertical-align: middle;
+    }
+
+    tr:nth-child(even) td {
+      background-color: var(--table-alt-bg);
+    }
+
+    tr:hover td {
+      background-color: var(--primary-light);
+    }
+
+    /* Lists */
+    ol.custom-list, ul.custom-list {
+      margin: 14px 0 18px 22px;
+      font-size: 0.95rem;
+    }
+
+    ol.custom-list > li, ul.custom-list > li {
+      margin-bottom: 10px;
+      padding-left: 4px;
+      word-break: keep-all;
+    }
+
+    ul.sub-list {
+      margin: 8px 0 8px 20px;
+      list-style-type: circle;
+    }
+
+    ul.sub-list > li {
+      margin-bottom: 6px;
+      color: var(--text-color);
+    }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .action-bar, .mermaid-actions {
+        display: none !important;
+      }
+      .main-container {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .mermaid-card {
+        border: 1px solid #ccc !important;
+        break-inside: avoid;
+      }
+      .code-block-wrapper {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+      }
+      .table-container {
+        box-shadow: none !important;
+      }
+      h2.section-heading {
+        page-break-before: auto;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 24px 16px;
+      }
+      h1.doc-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Action Bar -->
+  <div class="action-bar">
+    <div class="action-bar-left">
+      <span class="action-badge">HTML Document</span>
+      <span>Youtube AI Digest 사용자 가이드 (User Guide)</span>
+    </div>
+    <div class="action-bar-right">
+      <button class="btn-action" onclick="toggleTheme()" title="화면 테마 변경">🌓 테마 전환</button>
+      <button class="btn-action" onclick="window.print()" title="문서 인쇄 또는 PDF로 저장">🖨️ 인쇄 / PDF 저장</button>
+      <button class="btn-action" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="맨 위로 이동">⬆️ 상단</button>
+    </div>
+  </div>
+
+  <!-- Document Card -->
+  <div class="main-container">
+    <h1 class="doc-title">📖 Youtube AI Digest 사용자 가이드 (User Guide)</h1>
+<p class="paragraph"><strong>Youtube AI Digest</strong>는 등록한 유튜브 채널들의 신규 영상을 매일 아침 자동으로 탐지하고, AI를 통해 단순 요약을 넘어선 <strong>초정밀 심층 분석 리포트</strong>를 생성해 주는 웹 대시보드 시스템입니다.</p>
+<p class="paragraph">본 가이드는 패키지를 전달받은 사용자가 프로그램을 처음 설치하고 구동하여 일상 업무에 완벽히 활용할 수 있도록 작성된 종합 매뉴얼입니다.</p>
+<hr class="divider" />
+<h2 id="1__사전_준비_사항__Prerequisites" class="section-heading"><span class="heading-anchor">#</span>1. 사전 준비 사항 (Prerequisites)</h2>
+<ol class="custom-list"><li><strong>파이썬 (Python 3.10 이상)</strong><ul class="sub-list"><li>파이썬이 설치되어 있지 않다면 <a href="https://www.python.org/downloads/" target="_blank" rel="noopener noreferrer">python.org</a>에서 다운로드하여 설치합니다.</li><li><strong>설치 시 주의사항</strong>: 설치 화면 첫 페이지 하단의 <strong><code class="inline-code">Add Python to PATH</code></strong> 체크박스를 반드시 체크해 주세요.</li></ul></li><li><strong>웹 브라우저</strong>: Chrome, Edge, Firefox 등 최신 모던 브라우저 지원.</li><li><strong>(권장) Google Gemini API Key</strong>: 무료 발급 가능 (아래 3절 참조).</li></ol>
+<hr class="divider" />
+<h2 id="2__초간단_3단계_설치_및_실행_방법" class="section-heading"><span class="heading-anchor">#</span>2. 초간단 3단계 설치 및 실행 방법</h2>
+<div class="mermaid-card" id="diagram_1_card">  <div class="mermaid-header">    <div class="mermaid-title-wrap">      <span class="mermaid-icon">📊</span>      <span class="mermaid-title">시스템 흐름도 & 아키텍처 다이어그램</span>    </div>    <div class="mermaid-actions">      <button class="btn-diag-ctrl" onclick="toggleDiagramExpand('diagram_1')" title="가로폭 100% 확대 / 축소">🔍 폭 맞춤 확대</button>      <button class="btn-diag-ctrl" onclick="openDiagramModal('diagram_1')" title="전체화면으로 크게 보기">⛶ 전체 화면</button>    </div>  </div>  <div class="mermaid-container" id="diagram_1_container">    <pre class="mermaid" id="diagram_1">
+flowchart LR
+    Step1["1. 압축 해제\n(Youtube_AI_Digest_Package.zip)"]
+    Step2["2. install.bat 더블클릭\n(필수 패키지 자동 설치)"]
+    Step3["3. run.bat 더블클릭\n(서버 기동 및 브라우저 자동 오픈)"]
+    Step4["4. 대시보드 접속 완료!\n(http://127.0.0.1:8070)"]
+
+    Step1 --> Step2 --> Step3 --> Step4
+</pre>  </div></div>
+<h3 id="1단계__압축_해제" class="sub-heading">[1단계] 압축 해제</h3>
+<p class="paragraph">전달받은 <code class="inline-code">Youtube_AI_Digest_Package.zip</code> 파일을 원하는 폴더(예: <code class="inline-code">C:\Youtube_AI_Digest</code> 또는 <code class="inline-code">D:\Tools\Youtube_AI_Digest</code>)에 압축 해제합니다.</p>
+<h3 id="2단계___install_bat__실행__최초_1회" class="sub-heading">[2단계] <code class="inline-code">install.bat</code> 실행 (최초 1회)</h3>
+<ul class="custom-list"><li>폴더 내의 <strong><code class="inline-code">install.bat</code></strong> 파일을 더블클릭합니다.</li><li>프로그램 구동에 필요한 라이브러리(<code class="inline-code">FastAPI</code>, <code class="inline-code">Uvicorn</code>, <code class="inline-code">youtube-transcript-api</code> 등)가 자동으로 다운로드 및 설치됩니다.</li><li>설치가 끝나고 콘솔 창에 <code class="inline-code">패키지 설치가 완료되었습니다.</code> 문구가 뜨면 아무 키나 눌러 창을 닫습니다.</li></ul>
+<h3 id="3단계___run_bat__실행__프로그램_시작" class="sub-heading">[3단계] <code class="inline-code">run.bat</code> 실행 (프로그램 시작)</h3>
+<ul class="custom-list"><li>폴더 내의 <strong><code class="inline-code">run.bat</code></strong> 파일을 더블클릭합니다.</li><li>포트 가용성(기본: <code class="inline-code">8070</code>)을 자동으로 확인한 후 서버를 구동하며, 준비가 완료되면 <strong>기본 웹 브라우저가 자동으로 열립니다</strong>.</li></ul>
+<div class="callout callout-tip">  <div class="callout-header">    <span class="callout-icon">💡</span>    <span class="callout-title">유용한 팁 (Tip)</span>  </div>  <div class="callout-content"><p><strong>포트 자동 전환 기능 탑재</strong></p><p>만약 8070 포트를 다른 프로그램이 이미 사용 중이더라도 걱정하지 마세요! <code class="inline-code">run.bat</code>이 스스로 8071, 8072 등 비어 있는 다음 포트를 찾아 자동으로 연결해 줍니다.</p></div></div>
+<hr class="divider" />
+<h2 id="3__API_키_발급_및_등록_가이드" class="section-heading"><span class="heading-anchor">#</span>3. API 키 발급 및 등록 가이드</h2>
+<p class="paragraph">Youtube AI Digest는 <strong>무료로 발급받을 수 있는 Google Gemini API</strong>를 기본 권장 엔진으로 지원합니다.</p>
+<h3 id="Google_Gemini_API_키_무료_발급__1분_소요" class="sub-heading">Google Gemini API 키 무료 발급 (1분 소요)</h3>
+<ol class="custom-list"><li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio (https://aistudio.google.com/app/apikey)</a>에 구글 계정으로 로그인합니다.</li><li><strong><code class="inline-code">Create API Key</code></strong> 버튼을 클릭하여 새 키를 생성합니다.</li><li>생성된 키 문자열(<code class="inline-code">AIzaSy...</code>)을 복사합니다.</li></ol>
+<h3 id="대시보드에_API_키_등록" class="sub-heading">대시보드에 API 키 등록</h3>
+<ol class="custom-list"><li>웹 대시보드 상단에 보이는 <strong>노란색 안내 배너</strong>의 입력창에 복사한 키를 붙여넣고 <strong><code class="inline-code">[저장]</code></strong>을 클릭합니다.</li><li>또는 우측 상단의 <strong><code class="inline-code">[⚙️ 스케줄 및 AI 설정]</code></strong> 버튼을 눌러 설정 창에서 키를 입력하고 <code class="inline-code">[API Key 연결 테스트]</code>로 정상 작동 여부를 확인할 수 있습니다.</li></ol>
+<div class="callout callout-note">  <div class="callout-header">    <span class="callout-icon">ℹ️</span>    <span class="callout-title">참고 (Note)</span>  </div>  <div class="callout-content"><p>API 키를 등록하지 않더라도 내장된 스마트 자막 추출 요약기가 기본 작동하지만, 고품질 심층 리포트를 위해 Gemini API 키 등록을 강력히 추천합니다.</p></div></div>
+<hr class="divider" />
+<h2 id="4__유튜브_채널_등록_및_관리" class="section-heading"><span class="heading-anchor">#</span>4. 유튜브 채널 등록 및 관리</h2>
+<p class="paragraph">본 패키지는 초기 상태에 등록된 채널이 없으므로, 원하시는 유튜브 채널을 자유롭게 등록할 수 있습니다.</p>
+<div class="mermaid-card" id="diagram_2_card">  <div class="mermaid-header">    <div class="mermaid-title-wrap">      <span class="mermaid-icon">📊</span>      <span class="mermaid-title">시스템 흐름도 & 아키텍처 다이어그램</span>    </div>    <div class="mermaid-actions">      <button class="btn-diag-ctrl" onclick="toggleDiagramExpand('diagram_2')" title="가로폭 100% 확대 / 축소">🔍 폭 맞춤 확대</button>      <button class="btn-diag-ctrl" onclick="openDiagramModal('diagram_2')" title="전체화면으로 크게 보기">⛶ 전체 화면</button>    </div>  </div>  <div class="mermaid-container" id="diagram_2_container">    <pre class="mermaid" id="diagram_2">
+flowchart TD
+    User["사용자 입력\n(채널 URL 또는 @핸들)"] --> AddModal["[채널 추가] 모달"]
+    AddModal --> AutoDetect["채널명 / 프로필 / 핸들 자동 감지"]
+    AutoDetect --> StyleSelect{"요약 프롬프트 스타일 선택"}
+    StyleSelect -->|건설/시공/공무/견적| Style1["🏗️ 건설 실무 특화"]
+    StyleSelect -->|인공지능/소프트웨어/데이터| Style2["💻 IT / AI / 테크 특화"]
+    StyleSelect -->|경영/경제/교양/자기계발| Style3["📋 일반 / 비즈니스 범용"]
+    Style1 & Style2 & Style3 --> Sync["최근 150개 영상 자동 동기화 & DB 등록"]
+</pre>  </div></div>
+<ol class="custom-list"><li><strong>채널 등록 창 열기</strong>:<ul class="sub-list"><li>상단 채널 바의 <strong><code class="inline-code">[+ 채널 추가]</code></strong> 버튼 또는 우측 상단 <strong><code class="inline-code">[📺 채널 관리]</code></strong> 버튼을 클릭합니다.</li></ul></li><li><strong>채널 주소 입력</strong>:<ul class="sub-list"><li>다음 중 어떤 형식으로 입력해도 자동 인식됩니다:</li><li>채널 핸들: <code class="inline-code">@채널명</code> (예: <code class="inline-code">@PracticalEngineeringChannel</code>)</li><li>채널 홈 URL: <code class="inline-code">https://www.youtube.com/@채널명</code></li><li>채널 영상 탭: <code class="inline-code">https://www.youtube.com/@채널명/videos</code></li></ul></li><li><strong>AI 요약 스타일 선택</strong>:<ul class="sub-list"><li><strong>🏗️ 건설 실무 특화</strong>: 도면, 시공 공법, 적산, BIM, 현장 안전 중심 분석.</li><li><strong>💻 IT / AI / 테크 특화</strong>: 코드, 알고리즘, 모델 아키텍처, 개발 프롬프트 중심 분석.</li><li><strong>📋 일반 / 비즈니스 범용</strong>: 핵심 아이디어, 시사점, 실행 전략 중심 분석.</li></ul></li><li><strong><code class="inline-code">[채널 등록 및 동기화]</code> 클릭</strong>:<ul class="sub-list"><li>등록 즉시 해당 채널의 최신 영상 목록을 자동으로 수집하여 대시보드에 반영합니다.</li></ul></li></ol>
+<hr class="divider" />
+<h2 id="5__핵심_대시보드_기능_활용법" class="section-heading"><span class="heading-anchor">#</span>5. 핵심 대시보드 기능 활용법</h2>
+<h3 id="1__상단_채널_선택_탭" class="sub-heading">1) 상단 채널 선택 탭</h3>
+<ul class="custom-list"><li><strong><code class="inline-code">[🌐 전체 채널]</code></strong>: 등록된 모든 유튜브 채널의 신규 영상과 요약본을 한 화면에서 통합 모니터링합니다. (기본 화면)</li><li><strong><code class="inline-code">[📺 개별 채널 버튼]</code></strong>: 특정 채널 버튼을 누르면 해당 채널의 영상 및 아카이브만 필터링하여 집중 열람합니다.</li></ul>
+<h3 id="2__24시간_신규_영상_스포트라이트__Spotlight" class="sub-heading">2) 24시간 신규 영상 스포트라이트 (Spotlight)</h3>
+<ul class="custom-list"><li>상단 배너 영역에 <strong>최근 24시간 이내에 새로 업로드된 따끈따끈한 영상</strong>이 우선 노출됩니다.</li><li>아직 요약되지 않은 영상은 <strong><code class="inline-code">[⚡ AI 심층 요약 생성]</code></strong> 버튼을 눌러 즉시 분석할 수 있습니다.</li></ul>
+<h3 id="3__3단계_맞춤_AI_요약_상세도" class="sub-heading">3) 3단계 맞춤 AI 요약 상세도</h3>
+<p class="paragraph">요약 모달 창 우측 상단의 상세도 선택기에서 원하는 분석 깊이를 선택하고 즉시 재요약할 수 있습니다:</p>
+<ul class="custom-list"><li><strong>🔍 초정밀 심층 요약 (Ultra-Detailed)</strong>: 60초 단위 분초 타임라인 해설, 영상 속 프롬프트/워크플로우 원문 복원, 실무 체크리스트 제공.</li><li><strong>🏗️ 적산/견적 특화 분석 (Take-off Focused)</strong>: 물량 산출식, 규격 변환, 수치 계산 집중 분석.</li><li><strong>📋 표준 핵심 요약 (Standard Brief)</strong>: 핵심 시사점 중심의 빠른 3분 브리핑.</li></ul>
+<h3 id="4__개별_동영상_즉시_추가______단일_영상_추가" class="sub-heading">4) 개별 동영상 즉시 추가 (<code class="inline-code">[+ 단일 영상 추가]</code>)</h3>
+<ul class="custom-list"><li>채널 전체를 등록하지 않고, 지금 당장 보고 싶은 유튜브 동영상 1개의 URL만 붙여넣어 AI 심층 요약을 생성하고 영구 보관할 수 있습니다.</li><li>카테고리 태그(예: <code class="inline-code">AI</code>, <code class="inline-code">Structural Engineering</code> 등)를 지정하여 맞춤 분류가 가능합니다.</li></ul>
+<h3 id="5__리포트_복사_및_마크다운__md__다운로드" class="sub-heading">5) 리포트 복사 및 마크다운(.md) 다운로드</h3>
+<ul class="custom-list"><li>생성된 AI 요약 리포트는 모달 하단의 <strong><code class="inline-code">[📋 리포트 복사]</code></strong> 또는 <strong><code class="inline-code">[💾 마크다운(.md) 저장]</code></strong> 버튼을 통해 사내 보고서나 노션(Notion), 옵시디언(Obsidian) 문서로 바로 붙여넣을 수 있습니다.</li></ul>
+<hr class="divider" />
+<h2 id="6__오프라인_뷰어___offline_viewer_html___활용" class="section-heading"><span class="heading-anchor">#</span>6. 오프라인 뷰어 (<code class="inline-code">offline_viewer.html</code>) 활용</h2>
+<p class="paragraph">서버를 실행하지 않고도, 언제 어디서나 인터넷 창만 띄우면 지금까지 작성된 모든 AI 요약 리포트를 검색·열람할 수 있는 <strong>100% 독립형 HTML 뷰어</strong>가 내장되어 있습니다.</p>
+<div class="mermaid-card" id="diagram_3_card">  <div class="mermaid-header">    <div class="mermaid-title-wrap">      <span class="mermaid-icon">📊</span>      <span class="mermaid-title">시스템 흐름도 & 아키텍처 다이어그램</span>    </div>    <div class="mermaid-actions">      <button class="btn-diag-ctrl" onclick="toggleDiagramExpand('diagram_3')" title="가로폭 100% 확대 / 축소">🔍 폭 맞춤 확대</button>      <button class="btn-diag-ctrl" onclick="openDiagramModal('diagram_3')" title="전체화면으로 크게 보기">⛶ 전체 화면</button>    </div>  </div>  <div class="mermaid-container" id="diagram_3_container">    <pre class="mermaid" id="diagram_3">
+flowchart LR
+    ServerRun["웹 대시보드에서\n요약 리포트 축적"] --> Export["웹 화면 [오프라인 뷰어로 내보내기]\n또는 export_offline_viewer.bat"]
+    Export --> SingleHTML["단일 파일\noffline_viewer.html 갱신"]
+    SingleHTML --> OpenAnywhere["open_offline_viewer.bat\n(파이썬/서버 없이 브라우저 단독 열람)"]
+</pre>  </div></div>
+<ol class="custom-list"><li><strong>오프라인 뷰어 열기</strong>:<ul class="sub-list"><li>폴더 내의 <strong><code class="inline-code">open_offline_viewer.bat</code></strong> 파일을 더블클릭하거나 <code class="inline-code">offline_viewer.html</code>을 웹 브라우저로 직접 엽니다.</li><li><strong>파이썬이나 서버가 꺼져 있어도 즉시 열리며</strong>, 검색, 채널별 필터, 모달 열람이 100% 정상 작동합니다.</li></ul></li><li><strong>최신 요약 데이터 내보내기/갱신</strong>:<ul class="sub-list"><li>대시보드 우측 상단의 <strong><code class="inline-code">[오프라인 뷰어]</code></strong> 버튼을 클릭하거나, 폴더 내 <strong><code class="inline-code">export_offline_viewer.bat</code></strong>을 실행하면 현재 DB에 쌓인 모든 요약본이 <code class="inline-code">offline_viewer.html</code> 단일 파일로 즉시 업데이트됩니다.</li><li>이 파일 하나만 메일이나 메신저로 다른 팀원에게 전달하면, 팀원은 파이썬 설치 없이도 모든 요약 리포트를 열람할 수 있습니다.</li></ul></li></ol>
+<hr class="divider" />
+<h2 id="7__서버_안전_종료___stop_bat" class="section-heading"><span class="heading-anchor">#</span>7. 서버 안전 종료 (<code class="inline-code">stop.bat</code>)</h2>
+<ul class="custom-list"><li>프로그램을 종료하려면 열려 있는 콘솔 창을 닫거나, 폴더 내의 <strong><code class="inline-code">stop.bat</code></strong> 파일을 더블클릭합니다.</li><li>백그라운드에서 동작 중이던 포트 8070~8079 범위의 요약기 서버 프로세스가 안전하게 일괄 정리됩니다.</li></ul>
+<hr class="divider" />
+<h2 id="8__자주_묻는_질문__FAQ____트러블슈팅" class="section-heading"><span class="heading-anchor">#</span>8. 자주 묻는 질문 (FAQ) & 트러블슈팅</h2>
+<h3 id="Q1___run_bat_을_실행했는데_창이_금방_닫힙니다" class="sub-heading">Q1. <code class="inline-code">run.bat</code>을 실행했는데 창이 금방 닫힙니다.</h3>
+<ul class="custom-list"><li><strong>원인</strong>: 컴퓨터에 파이썬이 설치되어 있지 않거나, 환경변수(PATH)에 등록되지 않았을 때 발생합니다.</li><li><strong>해결</strong>: <a href="https://www.python.org/" target="_blank" rel="noopener noreferrer">python.org</a>에서 파이썬 설치 파일을 다시 실행하여 <strong><code class="inline-code">Add Python to PATH</code></strong>를 반드시 체크하고 재설치해 주세요.</li></ul>
+<h3 id="Q2__동영상_요약_시__자막을_가져올_수_없습니다_라는_안내가_나옵니다" class="sub-heading">Q2. 동영상 요약 시 "자막을 가져올 수 없습니다"라는 안내가 나옵니다.</h3>
+<ul class="custom-list"><li><strong>원인</strong>: 해당 유튜브 영상 제작자가 자막(자동 생성 자막 포함)을 완전히 비활성화했거나, 연령 제한/비공개 영상인 경우입니다.</li><li><strong>해결</strong>: 자막이 제공되는 일반 공개 영상에서 요약 기능이 정상 작동합니다.</li></ul>
+<h3 id="Q3__매일_아침_09_00_자동_조사가_작동하려면_컴퓨터를_켜두어야_하나요" class="sub-heading">Q3. 매일 아침 09:00 자동 조사가 작동하려면 컴퓨터를 켜두어야 하나요?</h3>
+<ul class="custom-list"><li>네, 내장 스케줄러(<code class="inline-code">APScheduler</code>)는 프로그램(<code class="inline-code">run.bat</code>)이 실행 중인 상태에서 매일 아침 09:00에 등록된 채널들을 자동으로 방문하여 새 영상을 탐지합니다.</li><li>만약 컴퓨터가 꺼져 있었더라도, 나중에 켜서 대시보드 상단의 <strong><code class="inline-code">[⚡ 지금 즉시 24h 조사 실행]</code></strong> 버튼을 누르면 즉시 최근 24시간 영상을 조사하여 요약합니다.</li></ul>
+    
+    <div class="doc-footer">
+      <span>Youtube AI Digest System Documentation</span>
+      <span>Generated for standalone web viewing</span>
+    </div>
+  </div>
+
+  <!-- Modal for Fullscreen Diagram -->
+  <div class="diag-modal-overlay" id="diagModal" onclick="closeDiagramModal(event)">
+    <div class="diag-modal-content" onclick="event.stopPropagation()">
+      <div class="diag-modal-header">
+        <strong id="modalDiagTitle">📊 다이어그램 전체화면 보기</strong>
+        <button class="btn-diag-ctrl" onclick="closeDiagramModal()">✕ 닫기 (ESC)</button>
+      </div>
+      <div class="diag-modal-body" id="modalDiagBody">
+        <!-- SVG will be cloned here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mermaid.js for Diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    const isDark = document.documentElement.classList.contains('dark') || 
+                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      fontFamily: 'Pretendard, -apple-system, sans-serif',
+      themeVariables: {
+        fontSize: '15px',
+        fontFamily: 'Pretendard, -apple-system, sans-serif'
+      },
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis',
+        nodeSpacing: 45,
+        rankSpacing: 45
+      }
+    });
+
+    // After mermaid renders, enhance SVGs to fill 100% width and scale cleanly
+    setTimeout(() => {
+      document.querySelectorAll('.mermaid svg').forEach(svg => {
+        svg.removeAttribute('height'); // allow height to scale proportionally with width
+        svg.style.width = '100%';
+        svg.style.maxWidth = '100%';
+        svg.style.height = 'auto';
+      });
+    }, 400);
+  </script>
+
+  <script>
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      htmlEl.classList.toggle('dark');
+      const isDark = htmlEl.classList.contains('dark');
+      localStorage.setItem('doc-theme', isDark ? 'dark' : 'light');
+    }
+
+    (function() {
+      const savedTheme = localStorage.getItem('doc-theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+
+    function copyCode(btn) {
+      const codeBlock = btn.closest('.code-block-wrapper').querySelector('code');
+      if (codeBlock) {
+        navigator.clipboard.writeText(codeBlock.innerText).then(() => {
+          const orig = btn.innerText;
+          btn.innerText = '✅ 복사됨!';
+          setTimeout(() => {
+            btn.innerText = orig;
+          }, 1800);
+        }).catch(err => {
+          console.error('Failed to copy', err);
+        });
+      }
+    }
+
+    function toggleDiagramExpand(diagId) {
+      const card = document.getElementById(diagId + '_card');
+      if (card) {
+        card.classList.toggle('expanded');
+        const btn = card.querySelector('.btn-diag-ctrl');
+        if (btn) {
+          btn.innerText = card.classList.contains('expanded') ? '🔍 기본 폭으로' : '🔍 폭 맞춤 확대';
+        }
+      }
+    }
+
+    function openDiagramModal(diagId) {
+      const container = document.getElementById(diagId + '_container');
+      const modal = document.getElementById('diagModal');
+      const modalBody = document.getElementById('modalDiagBody');
+      if (container && modal && modalBody) {
+        const svg = container.querySelector('svg');
+        if (svg) {
+          modalBody.innerHTML = svg.outerHTML;
+          modal.classList.add('active');
+        }
+      }
+    }
+
+    function closeDiagramModal(event) {
+      const modal = document.getElementById('diagModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDiagramModal();
+      }
+    });
+  </script>
+</body>
+</html>
