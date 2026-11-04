@@ -86,7 +86,7 @@ python app.py
 ## 📁 프로젝트 파일 구조
 
 ```
-g:\내 드라이브\2. AI\Antigravity\Tim_Fairley\
+g:\내 드라이브\2. AI\Antigravity\Youtube_AI_Digest\
 ├── backend/
 │   ├── __init__.py
 │   ├── youtube_scraper.py   # 유튜브 채널 파싱, 24시간 필터링, 자막 추출
